@@ -1,9 +1,7 @@
 const AlbumModel = require('../models/album.model');
 
 const get = (req, res) => {
-    let albums = AlbumModel.read();
-    console.log(albums);
-    res.send(albums);
+    AlbumModel.read.then((albums) => { res.send(albums) });
 }
 
-module.exports = {get: get};
+module.exports = { get: get };

@@ -4,14 +4,12 @@ function Album(params) {
     this.title = params.title;
 }
 
-read = () => {
-    let result;
+const read = new Promise((resolve, reject) => {
     let query = `SELECT * FROM album`;
     connection.query(query, (err, albums) => {
         if (err) return console.log(err.message);
-        result = albums;
-    });
-    return result;
-}
+        resolve(albums);
+    })
+});
 
 module.exports = {Album: Album, read: read};
