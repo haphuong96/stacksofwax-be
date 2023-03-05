@@ -1,18 +1,19 @@
 const express = require('express');
 const app = express();
-const port = 3000;
 
+app.use(express.json());
+
+// load environment vars
+require('dotenv').config({path: './src/configs/.env'});
 
 const core = require('./src/routes/core');
 const users = require('./src/routes/users');
-
-app.use(express.json());
 
 // routes
 app.use('/', core);
 app.use('/users', users);
 
 
-app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`);
+app.listen(process.env.APP_PORT, () => {
+    console.log(`Application is running at http://${process.env.APP_HOST}:${process.env.APP_PORT}`);
 })
