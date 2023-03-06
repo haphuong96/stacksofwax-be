@@ -6,8 +6,8 @@ app.use(express.json());
 // load environment vars
 require('dotenv').config({path: './src/configs/.env'});
 
-const core = require('./src/routes/core');
-const users = require('./src/routes/users');
+const core = require('./src/routes/core.route');
+const users = require('./src/routes/users.route');
 
 // routes
 app.use('/', core);
