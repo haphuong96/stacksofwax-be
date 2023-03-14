@@ -1,22 +1,15 @@
-const albumRead = require('../repositories/album.repository');
+const db = require('../utils/db-execute.util');
 
-function albumGetAll(req) {
-    // return new Promise((resolve, reject) => {
-    // }).then(() => {
-    //     return albumRead()
-    //         .then
-    // })
-
-
-    let queryString;
-
-    return albumRead(queryString)
-        .then((albums) => {
-            return albums;
-        })
-        .catch((err) => {
-            throw err;
-        })
+async function findAllAlbum(req) {
+    try {
+        let query = 'SELECT ab.*, at.* FROM album ab JOIN artist at on ab.artist_id = at.id';
+        let data = await db.execute(query);
+        return data;
+    } catch (err) {
+        throw err;
+    } 
 }
 
-module.exports = albumGetAll;
+module.exports = {
+    findAllAlbum: findAllAlbum
+}

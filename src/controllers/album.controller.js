@@ -1,23 +1,12 @@
-// const AlbumModel = require('../models/album.model');
-const albumGetAll = require('../services/album.service');
+const albumService = require('../services/album.service');
 
-function getAll(req, res) {
-    albumGetAll(req)
-        .then((data) => {
-            res.status(200).send(data);
-        })
-        .catch((err) => {
-            res.send(err);
-        })
-
-
-    // AlbumModel.read()
-    //     .then((albums) => { res.status(200).send(albums) });
-        
-    // callback option    
-    // AlbumModel.read((result) => {
-    //     res.send(result);
-    // })
+async function getAllAlbum(req, res) {
+    try {
+        let albums = await albumService.findAllAlbum(req);
+        res.status(200).send({data: albums});
+    } catch (error) {
+        res.send(error);
+    }
 }
 
-module.exports = { getAll: getAll };
+module.exports = { getAllAlbum: getAllAlbum };
