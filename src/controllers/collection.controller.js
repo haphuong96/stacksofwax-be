@@ -2,8 +2,8 @@ const collectionService = require('../services/collection.service');
 
 async function getAllCollection(req, res) {
     try {
-        let findAllCollectionData = await collectionService.findAllCollection(req);
-        res.status(200).send({data: findAllCollectionData});
+        let collections = await collectionService.findAllCollection(req);
+        res.status(200).send({data: collections});
     } catch (err) {
         throw err;
     }
@@ -13,8 +13,8 @@ async function getCollectionById(req, res) {
     try {
         let collectionId = req.params.collectionId;
 
-        let findCollectionByIdData = await collectionService.findCollectionById(collectionId);
-        res.status(200).send({data: findCollectionByIdData});
+        let collection = await collectionService.findCollectionById(collectionId);
+        res.status(200).send({data: collection});
     } catch (err) {
         throw err;
     }
@@ -33,14 +33,15 @@ async function postCollection(req, res) {
 async function updateCollection(req, res) {
     let collectionId = req.params.collectionId;
     let newCollectionData = req.body;
+    console.log(req.body);
     let updateCollection = await collectionService.updateCollection(collectionId, newCollectionData);
 
     res.status(200).send({message: `Update collection id ${collectionId} successfully`, data: updateCollection})
 }
 
 module.exports = { 
-    getAllCollection: getAllCollection,
-    getCollectionById: getCollectionById,
-    postCollection: postCollection,
-    updateCollection: updateCollection
+    getAllCollection,
+    getCollectionById,
+    postCollection,
+    updateCollection
 };
