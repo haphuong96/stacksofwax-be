@@ -11,7 +11,7 @@ async function getAllAlbum(req, res, next) {
         // send data
         res.status(200).send(serializedAlbums);
     } catch (error) {
-        res.send(error);
+        next(error);
     }
 }
 

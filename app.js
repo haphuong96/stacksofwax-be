@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const globalErrHandler = require('./src/middlewares/error-handler');
 
 app.use(express.json());
 
@@ -10,26 +11,12 @@ const core = require('./src/routes/core.route');
 const users = require('./src/routes/users.route');
 
 
-// middlewares response format
-// app.use((req, res, next) => {
-//     let resSend = res.send;
-
-//     res.send = (resBody) => {
-//         // res.contentType("application/json");
-//         res.setHeader('Content-Type', 'application/json');
-//         let content = {data: resBody};
-//         resSend.call(this, JSON.stringify(content));
-//     };
-    
-    
-//     next();
-// })
-
 // routes
-app.use('/', core);
-app.use('/users', users);
+app.use('/api', core);
+app.use('/api', users);
 
-
+// middlewares error handler
+app.use(globalErrHandler);
 
 app.listen(process.env.APP_PORT, () => {
     console.log(`Application is running at http://${process.env.APP_HOST}:${process.env.APP_PORT}`);

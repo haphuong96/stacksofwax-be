@@ -1,9 +1,9 @@
-const db = require('../utils/db-execute.util');
+const db = require('../utils/db-execution.util');
 
 async function findAllCollection(req) {
     try {
-        let query = 'SELECT * FROM album_collection';
-        let data = await db.execute(query);
+        const query = 'SELECT * FROM album_collection';
+        const data = await db.execute(query);
 
         return data;
     } catch (err) {
@@ -13,8 +13,8 @@ async function findAllCollection(req) {
 
 async function findCollectionById(collectionId) {
 
-    let query = 'SELECT * FROM album_collection WHERE id = ?';
-    let data = await db.execute(query, [collectionId]);
+    const query = 'SELECT * FROM album_collection WHERE id = ?';
+    const data = await db.execute(query, [collectionId]);
 
     return data;
 
@@ -22,10 +22,10 @@ async function findCollectionById(collectionId) {
 
 async function createCollection() {
     try {
-        let query = `INSERT INTO album_collection (collection_name) VALUES ('New Collection');
+        const query = `INSERT INTO album_collection (collection_name) VALUES ('New Collection');
                     SELECT * FROM album_collection WHERE id = LAST_INSERT_ID();`;
 
-        let data = await db.execute(query);
+        const data = await db.execute(query);
 
         return data[1];
     } catch (err) {
