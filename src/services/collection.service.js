@@ -1,14 +1,12 @@
 const db = require('../utils/db-execution.util');
 
 async function findAllCollection(req) {
-    try {
-        const query = 'SELECT * FROM album_collection';
-        const data = await db.execute(query);
 
-        return data;
-    } catch (err) {
-        throw err;
-    }
+    const query = 'SELECT * FROM album_collection';
+    const data = await db.execute(query);
+
+    return data;
+
 }
 
 async function findCollectionById(collectionId) {
@@ -21,39 +19,34 @@ async function findCollectionById(collectionId) {
 }
 
 async function createCollection() {
-    try {
-        const query = `INSERT INTO album_collection (collection_name) VALUES ('New Collection');
+
+    const query = `INSERT INTO album_collection (collection_name) VALUES ('New Collection');
                     SELECT * FROM album_collection WHERE id = LAST_INSERT_ID();`;
 
-        const data = await db.execute(query);
+    const data = await db.execute(query);
 
-        return data[1];
-    } catch (err) {
-        throw err;
-    }
+    return data[1];
+
 }
 
 async function updateCollection(collectionId, newCollectionData) {
-    try {
-        // check if collection exists 
-        // if no collection found, throw exception
-        const collection = await findCollectionById(collectionId);
-        if (collection.length == 0) {
-            throw new Error("Collection not found!")
-        }
+    // check if collection exists 
+    // if no collection found, throw exception
+    const collection = await findCollectionById(collectionId);
+    if (collection.length == 0) {
+        throw new Error("Collection not found!")
+    }
 
-        // unbox collection data
-        const {collection_name, collection_desc, img_path} = newCollectionData;
+    // unbox collection data
+    const { collection_name, collection_desc, img_path } = newCollectionData;
 
-        const query = `UPDATE album_collection SET collection_name = ?, collection_desc = ?, img_path = ?;
+    const query = `UPDATE album_collection SET collection_name = ?, collection_desc = ?, img_path = ?;
                         SELECT * FROM album_collection WHERE id = ?`;
 
-        const data = await db.execute(query, [collection_name, collection_desc, img_path, collectionId]);
+    const data = await db.execute(query, [collection_name, collection_desc, img_path, collectionId]);
 
-        return data[1];
-    } catch (err) {
-        throw err;
-    }
+    return data[1];
+
 }
 
 

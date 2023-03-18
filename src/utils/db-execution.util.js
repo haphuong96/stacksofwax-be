@@ -1,4 +1,4 @@
-const connection = require('../services/db.service');
+const connection = require('../databases/db-connection');
 
 // var options  = {nestTables: true};
 

@@ -5,7 +5,7 @@ async function getAllCollection(req, res) {
         let collections = await collectionService.findAllCollection(req);
         res.status(200).send(collections);
     } catch (err) {
-        throw err;
+        next(err);
     }
 }
 
@@ -16,7 +16,7 @@ async function getCollectionById(req, res) {
         let collection = await collectionService.findCollectionById(collectionId);
         res.status(200).send(collection);
     } catch (err) {
-        throw err;
+        next(err);
     }
 }
 
@@ -26,7 +26,7 @@ async function postCollection(req, res) {
         let newCollectionCreated = await collectionService.createCollection();
         res.status(201).send(newCollectionCreated);
     } catch (err) {
-        throw err;
+        next(err);
     }
 }
 

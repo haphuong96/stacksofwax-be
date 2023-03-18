@@ -28,7 +28,7 @@ async function getAlbumById(req, res) {
         res.status(200).send(serializedAlbum);
         
     } catch (err) {
-        throw err;
+        next(err);
     }
 }
 
