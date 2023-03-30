@@ -1,5 +1,6 @@
 const db = require('../utils/db-execution.util');
 const passwordUtil = require('../utils/password-hash.util');
+const jwt = require('jsonwebtoken');
 
 async function createUser(userData) {
     // unbox userData
@@ -53,12 +54,19 @@ async function authenticate(userData) {
         const hashPw = passwordUtil.hash(password, salt);
         if (hashPw === storedPw) {
             // create JWT token
+            const token = jwt.sign(
+                { user: username, exp: Math.floor(Date.now() / 1000) + (60 * 30) },
+                process.env.SECRET_KEY,
+                { algorithm: 'HS256', audience: 'member'}
+                )
             successLogin = true;
+
+            return token;
         }
     }
 
     if (!successLogin) {
-        throw new Error("Incorrect username or password.");
+        throw new Error("Incorrect username or password. Please try again.");
     }
 
 }

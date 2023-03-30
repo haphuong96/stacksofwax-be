@@ -19,7 +19,6 @@ async function findCollectionById(collectionId) {
 }
 
 async function createCollection() {
-
     const query = `INSERT INTO album_collection (collection_name) VALUES ('New Collection');
                     SELECT * FROM album_collection WHERE id = LAST_INSERT_ID();`;
 

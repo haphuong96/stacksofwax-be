@@ -17,9 +17,9 @@ async function login(req, res, next) {
     try {
         const userData = req.body;
 
-        await userService.authenticate(userData);
+        const token = await userService.authenticate(userData);
 
-        res.status(201)
+        res.status(200).send({access_token: token});
     } catch (err) {
         next(err);
     }

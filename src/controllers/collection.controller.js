@@ -21,8 +21,9 @@ async function getCollectionById(req, res) {
 }
 
 
-async function postCollection(req, res) {
+async function postCollection(req, res, next) {
     try {
+        // create collection
         let newCollectionCreated = await collectionService.createCollection();
         res.status(201).send(newCollectionCreated);
     } catch (err) {
