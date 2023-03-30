@@ -29,6 +29,12 @@ async function createCollection() {
 
 }
 
+/**
+ * 
+ * @param {BigInt} collectionId 
+ * @param {{collection_name: String}} newCollectionData 
+ * @returns 
+ */
 async function updateCollection(collectionId, newCollectionData) {
     // check if collection exists 
     // if no collection found, throw exception

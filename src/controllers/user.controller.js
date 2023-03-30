@@ -13,4 +13,19 @@ async function registerUser(req, res, next) {
     }
 }
 
-module.exports = { registerUser };
+async function login(req, res, next) {
+    try {
+        const userData = req.body;
+
+        await userService.authenticate(userData);
+
+        res.status(201)
+    } catch (err) {
+        next(err);
+    }
+}
+
+module.exports = {
+    registerUser,
+    login
+};
