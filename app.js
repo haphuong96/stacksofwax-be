@@ -1,11 +1,16 @@
 const express = require('express');
+const cors = require('cors');
+
 const app = express();
 const globalErrHandler = require('./src/middlewares/error-handler.middleware');
 
-app.use(express.json());
-
 // load environment vars
 require('dotenv').config({path: './src/configs/.env'});
+
+app.use(express.json());
+app.use(cors({
+    origin: process.env.FE_DOMAIN
+}));
 
 const core = require('./src/routes/core.route');
 const users = require('./src/routes/users.route');
