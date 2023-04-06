@@ -3,10 +3,12 @@ const albumSerializer = require('../serializers/album.serializer');
 
 async function getAllAlbum(req, res, next) {
     try {
-        let albums = await albumService.findAllAlbum(req);
+        const queryStr = req.query;
+        
+        let albums = await albumService.findAllAlbum(queryStr);
 
         // serialize list of albums
-        let serializedAlbums = albums.map(albumSerializer.transformAlbum);
+        let serializedAlbums = albumSerializer.transformAlbum(albums);
 
         // send data
         res.status(200).send(serializedAlbums);
