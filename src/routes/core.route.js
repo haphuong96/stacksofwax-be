@@ -13,6 +13,6 @@ router.get('/collections/:collectionId', collectionController.getCollectionById)
 router.post('/collections', userAuthorization, collectionController.postCollection);
 router.put('/collections/:collectionId', collectionController.updateCollection);
 
-
+router.get('/genres', albumController.getAllGenres)
 
 module.exports = router;

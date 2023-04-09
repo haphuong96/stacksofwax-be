@@ -2,46 +2,62 @@ const db = require('../utils/db-execution.util');
 
 
 async function findAllAlbum(queryStr) {
-    const genreFilterQuery = `SELECT DISTINCT(album_id) FROM
+    const genreFilterQuery = `SELECT album_id FROM
     (SELECT album.id as album_id FROM album
     JOIN album_genre ON album.id = album_genre.album_id
-    WHERE genre_id in (?)
-    ) as genre_filter`
+    WHERE genre_id = ?
+    ) as genre_filter`;
 
-    const noFilterQuery = `SELECT id as album_id from album` 
-    
-    let appliedQuery;
+    const countGenreFilter = `SELECT COUNT(album_id) as album_count FROM
+    (SELECT album.id as album_id FROM album
+    JOIN album_genre ON album.id = album_genre.album_id
+    WHERE genre_id = ?
+    ) as genre_filter;`;
 
-    try {
-        const genreId = queryStr.genreId;
-        const limit = queryStr.limit;
-        const offset = queryStr.offset
+    const noFilterQuery = `SELECT id as album_id from album`
+    const noFilterCount = `SELECT count(id) as album_count from album;`
 
-        if (genreId) {
-            appliedQuery = genreFilterQuery
-        } else {
-            appliedQuery = noFilterQuery
-        }
+    let appliedFilter;
+    let appliedCount;
 
-        const query = `SELECT 
+    const genreId = queryStr.genreId;
+    const limit = queryStr.limit;
+    const offset = queryStr.offset
+
+    if (genreId) {
+        appliedFilter = genreFilterQuery
+        appliedCount = countGenreFilter
+    } else {
+        appliedFilter = noFilterQuery
+        appliedCount = noFilterCount
+    }
+
+    const query = `SELECT 
         album.id as album_id, 
         album.album_title, 
         album.release_year, 
         artist.id as artist_id, 
         artist.artist_name 
         FROM
-        (${appliedQuery}
+        (${appliedFilter}
         LIMIT ${limit}
         OFFSET ${offset}) as pagination
         JOIN album on pagination.album_id = album.id
         JOIN album_artist on pagination.album_id = album_artist.album_id
-        JOIN artist on artist.id = album_artist.artist_id`;
+        JOIN artist on artist.id = album_artist.artist_id;
+        
+        ${appliedCount} 
+        
+        SELECT TRUNCATE(release_year, -1) as decade FROM album GROUP BY decade DESC;`;
 
-        const data = await db.execute(query, [genreId]);
-        return data;
-    } catch (err) {
-        throw err;
-    }
+    const data = await db.execute(query, [genreId]);
+    
+    return {
+        albums: data[0],
+        album_count: data[1][0].album_count,
+        decades: data[2]
+    };
+
 }
 
 async function findAlbumById(albumId) {
