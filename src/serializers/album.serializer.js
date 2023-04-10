@@ -10,8 +10,8 @@ function transformAlbum(data) {
       resultAlbums.get(album_id).artists.push({artist_id, artist_name});
     } else {
       resultAlbums.set(album_id, {
-        ...rest,
         album_id,
+        ...rest,
         artists: [
           {
             artist_id,
@@ -23,15 +23,6 @@ function transformAlbum(data) {
   })
 
   return Array.from(resultAlbums.values());
-    // const { artist_id, artist_name, ...rest } = data;
-
-    // return {
-    //   ...rest,
-    //   artist: {
-    //     artist_id,
-    //     artist_name
-    //   },
-    // };
 }
 
 module.exports = { transformAlbum };

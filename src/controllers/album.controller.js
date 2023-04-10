@@ -5,14 +5,16 @@ const albumSerializer = require('../serializers/album.serializer');
 async function getAllAlbum(req, res, next) {
     try {
         const queryStr = req.query;
-        console.log(queryStr);
+
         const data = await albumService.findAllAlbum(queryStr);
 
         // serialize list of albums
-        let serializedAlbums = albumSerializer.transformAlbum(data.albums);
+        const serializedAlbums = albumSerializer.transformAlbum(data.albums);
+
+        data.albums = serializedAlbums;
 
         // send data
-        res.status(200).send({ total :data.album_count, albums: serializedAlbums, decades : data.decades});
+        res.status(200).send(data);
     } catch (error) {
         next(error);
     }
