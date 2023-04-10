@@ -2,36 +2,70 @@ const db = require('../utils/db-execution.util');
 
 
 async function findAllAlbum(queryStr) {
-    const genreFilterQuery = `SELECT album_id FROM
-    (SELECT album.id as album_id FROM album
-    JOIN album_genre ON album.id = album_genre.album_id
-    WHERE genre_id = ?
-    ) as genre_filter`;
+    /**
+     * Table to execute search/filter on
+     */
+    const table = `album`;
+    /**
+     * List of params to pass to query execution
+     */
+    const queryParam = [];
 
-    const countGenreFilter = `SELECT COUNT(album_id) as album_count FROM
-    (SELECT album.id as album_id FROM album
-    JOIN album_genre ON album.id = album_genre.album_id
-    WHERE genre_id = ?
-    ) as genre_filter;`;
+    /**
+     * This is the filtering query to be built according to applied filter.
+     */
+    let queryFilter = `SELECT ${table}.id as album_id FROM ${table}`;
+    let queryFilterCount = `SELECT COUNT(${table}.id) as total FROM ${table}`;
+    let joins = ``;
+    let whereClausesList = [];
 
-    const noFilterQuery = `SELECT id as album_id from album`
-    const noFilterCount = `SELECT count(id) as album_count from album;`
-
-    let appliedFilter;
-    let appliedCount;
-
-    const genreId = queryStr.genreId;
+    const genreIds = queryStr.genreId;
+    const decade = queryStr.decade;
     const limit = queryStr.limit;
-    const offset = queryStr.offset
+    const offset = queryStr.offset;
 
-    if (genreId) {
-        appliedFilter = genreFilterQuery
-        appliedCount = countGenreFilter
-    } else {
-        appliedFilter = noFilterQuery
-        appliedCount = noFilterCount
+    // build query, according to filter params
+    // build table joins
+    // For genre filtering, users can filter albums that fall under 1, 2 or more genres. It indicates AND relationship and each genre filter could be expressed with an INNTER JOIN.
+    // For example, 'OK Computer' album falls both in 'Rock' and 'Alternative Rock' genre. 
+    // When user selects 'Rock' and 'Alternative Rock', it should only show albums that falls both in these 2 genres, like 'OK Computer'.
+    if (genreIds) {
+        if (Array.isArray(genreId)) {
+            genreIds.forEach((genreId, index) => {
+                joins += ` JOIN album_genre ag${index + 1} ON ag${index + 1}.album_id = ${table}.id `;
+                whereClausesList.push(`ag${index + 1}.genre_id = ?`);
+                queryParam.push(genreId);
+            })
+        } else {
+            joins += ` JOIN album_genre ag ON ag.album_id = ${table}.id WHERE ag.genre_id = ?`
+            queryParam.push(genreId);
+        }
     }
 
+    if (decade) {
+        let year = parseInt(decade);
+        console.log(year);
+        whereClausesList.push(`${table}.release_year BETWEEN ? AND ?`);
+        queryParam.push(year, year+9)
+    }
+
+    // build Where statement and add to Joins.
+    // Represent AND relationship between expressions.
+    let whereStatement = ``;
+    if (whereClausesList.length > 0) {
+        whereStatement += ` WHERE ` + whereClausesList.join(" AND ");
+    }
+
+    //final queries
+    queryFilter += joins + whereStatement;
+    queryFilterCount += joins + whereStatement;
+
+    // Prepare query params to be executed. Include limit, offset and query filter count param.
+    let queryFilterParams = queryParam;
+    queryParam.push(limit, offset); // limit offset
+    queryParam.concat(queryFilterParams); // query filter count, since query filter count is the same as query filter params.
+    
+    // Query to be executed. Apply LIMIT and OFFSET for pagination.
     const query = `SELECT 
         album.id as album_id, 
         album.album_title, 
@@ -39,19 +73,19 @@ async function findAllAlbum(queryStr) {
         artist.id as artist_id, 
         artist.artist_name 
         FROM
-        (${appliedFilter}
+        (${queryFilter}
         LIMIT ${limit}
         OFFSET ${offset}) as pagination
         JOIN album on pagination.album_id = album.id
         JOIN album_artist on pagination.album_id = album_artist.album_id
         JOIN artist on artist.id = album_artist.artist_id;
         
-        ${appliedCount} 
+        ${queryFilterCount};
         
         SELECT TRUNCATE(release_year, -1) as decade FROM album GROUP BY decade DESC;`;
 
-    const data = await db.execute(query, [genreId]);
-    
+    const data = await db.execute(query, queryParam);
+
     return {
         albums: data[0],
         album_count: data[1][0].album_count,
