@@ -51,7 +51,7 @@ async function findAllAlbum(queryStr) {
     const whereClausesList = [];
 
     // User filter params
-    const genreIds = (Array.isArray(queryStr.genreId)) ? queryStr.genreId : [queryStr.genreId];
+    const genreIds = (typeof queryStr.genreId === "string") ? [queryStr.genreId] : [];
     const decade = parseInt(queryStr.decade);
     const limit = parseInt(queryStr.limit);
     const offset = parseInt(queryStr.offset);
