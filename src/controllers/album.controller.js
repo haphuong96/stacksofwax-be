@@ -4,9 +4,22 @@ const albumSerializer = require('../serializers/album.serializer');
 
 async function getAllAlbum(req, res, next) {
     try {
-        const queryStr = req.query;
+        if (typeof req.query.genreId === "string") {
+            req.query.genreId = [req.query.genreId];
+        }
 
-        const data = await albumService.findAllAlbum(queryStr);
+        /**
+         * @type string[]
+         */
+        const genreIds = req.query.genreId;
+        const decade = parseInt(req.query.decade);
+        const limit = parseInt(req.query.limit);
+        const offset = parseInt(req.query.offset);
+
+        const data = await albumService.findAllAlbum(limit, offset, {
+            genreIds,
+            decade
+        });
 
         // serialize list of albums
         const serializedAlbums = albumSerializer.transformAlbum(data.albums);
@@ -22,16 +35,16 @@ async function getAllAlbum(req, res, next) {
 
 async function getAlbumById(req, res, next) {
     try {
-        let albumId = req.params.albumId;
+        const albumId = req.params.albumId;
 
-        let album = await albumService.findAlbumById(albumId);
+        const data = await albumService.findAlbumById(albumId);
 
         // serialize album data
-        let serializedAlbum = album.map(albumSerializer.transformAlbum);
-        
+        const serializedAlbum = albumSerializer.transformAlbum(data);
+
         // send data
         res.status(200).send(serializedAlbum);
-        
+
     } catch (err) {
         next(err);
     }
@@ -48,7 +61,7 @@ async function getAllGenres(req, res, next) {
     }
 }
 
-module.exports = { 
+module.exports = {
     getAllAlbum,
     getAlbumById,
     getAllGenres

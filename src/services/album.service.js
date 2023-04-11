@@ -2,10 +2,12 @@ const db = require('../utils/db-execution.util');
 
 /**
  * 
- * @param {{genreId: string[], decade:string}} queryStr 
- * @returns 
+ * @param {number} limit 
+ * @param {number} offset 
+ * @param {{genreIds: string[], decade: number}} filters 
+ * @returns
  */
-async function findAllAlbum(queryStr) {
+async function findAllAlbum(limit, offset, filters) {
     /**
      * Main table to execute search/filter on
      */
@@ -50,17 +52,16 @@ async function findAllAlbum(queryStr) {
     const joinsList = [];
     const whereClausesList = [];
 
-    // User filter params
-    const genreIds = (typeof queryStr.genreId === "string") ? [queryStr.genreId] : [];
-    const decade = parseInt(queryStr.decade);
-    const limit = parseInt(queryStr.limit);
-    const offset = parseInt(queryStr.offset);
+    // Filter Params
+    const genreIds = filters.genreIds;
+    const decade = filters.decade;
 
     // build joins list
     // For genre filtering, users can filter albums that fall under 1, 2 or more genres. It indicates AND relationship and each genre filter could be expressed with an INNTER JOIN.
     // For example, 'OK Computer' album falls both in 'Rock' and 'Alternative Rock' genre. 
     // When user selects 'Rock' and 'Alternative Rock', it should only show albums that falls both in these 2 genres, like 'OK Computer'.
-    if (genreIds.length > 0) {
+    
+    if (genreIds) {
         genreIds.forEach((genreId, index) => {
             joinsList.push(` JOIN album_genre ag${index + 1} ON ag${index + 1}.album_id = ${mainTable}.id `);
             whereClausesList.push(`ag${index + 1}.genre_id = ?`);
@@ -110,7 +111,7 @@ async function findAllAlbum(queryStr) {
                     ${queryFilterCount};
                         
                     SELECT TRUNCATE(release_year, -1) as decade FROM album GROUP BY decade DESC;`;
-
+    
     const data = await db.execute(query, queryParam);
 
     return {
