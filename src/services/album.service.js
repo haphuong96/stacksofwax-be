@@ -124,7 +124,19 @@ async function findAllAlbum(limit, offset, filters) {
 
 async function findAlbumById(albumId) {
     try {
-        const query = "SELECT * FROM album JOIN artist on album.artist_id = artist.id WHERE album.id = ?";
+        const query = ` SELECT 
+                            album.id as album_id, 
+                            album.album_title, 
+                            album.release_year,
+                            album.img_path, 
+                            artist.id as artist_id, 
+                            artist.artist_name
+                        FROM 
+                            album 
+                        JOIN album_artist on album.id = album_artist.album_id 
+                        JOIN artist on artist.id = album_artist.artist_id 
+                        WHERE 
+                            album.id = ?`;
         const data = await db.execute(query, [albumId]);
 
         return data;
