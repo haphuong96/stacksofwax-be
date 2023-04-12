@@ -39,11 +39,8 @@ async function getAlbumById(req, res, next) {
 
         const data = await albumService.findAlbumById(albumId);
 
-        // serialize album data
-        const serializedAlbum = albumSerializer.transformAlbum(data);
-
         // send data
-        res.status(200).send(serializedAlbum);
+        res.status(200).send(data);
 
     } catch (err) {
         next(err);

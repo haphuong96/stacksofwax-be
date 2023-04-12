@@ -104,9 +104,9 @@ async function findAllAlbum(limit, offset, filters) {
                         (${queryFilter}
                         LIMIT ?
                         OFFSET ?) as pagination
-                    JOIN album on pagination.album_id = album.id
-                    JOIN album_artist on pagination.album_id = album_artist.album_id
-                    JOIN artist on artist.id = album_artist.artist_id;
+                    JOIN album ON pagination.album_id = album.id
+                    JOIN album_artist ON pagination.album_id = album_artist.album_id
+                    JOIN artist ON artist.id = album_artist.artist_id;
                         
                     ${queryFilterCount};
                         
@@ -122,27 +122,108 @@ async function findAllAlbum(limit, offset, filters) {
 
 }
 
+/**
+ * 
+ * @param {number} albumId 
+ * @returns An album object, with the following album data:
+ * - album title, release year, img
+ * - artists
+ * - genres
+ * - record labels
+ * - tracks
+ * - comments
+ * - average rating
+ */
 async function findAlbumById(albumId) {
-    try {
-        const query = ` SELECT 
-                            album.id as album_id, 
-                            album.album_title, 
-                            album.release_year,
-                            album.img_path, 
-                            artist.id as artist_id, 
-                            artist.artist_name
+    /**
+     * Queries for execution
+     */
+    let executionQueries;
+    /**
+     * List of params to be executed
+     */
+    const queryParams = []; 
+
+    const albumQuery = `SELECT 
+                            id as album_id,
+                            album_title,
+                            release_year,
+                            img_path
                         FROM 
                             album 
-                        JOIN album_artist on album.id = album_artist.album_id 
-                        JOIN artist on artist.id = album_artist.artist_id 
                         WHERE 
-                            album.id = ?`;
-        const data = await db.execute(query, [albumId]);
+                            album.id = ?;`;
+    queryParams.push(albumId);
 
-        return data;
-    } catch (err) {
-        throw err;
-    }
+    const artistQuery = `SELECT
+                            artist.id as artist_id, 
+                            artist.artist_name
+                        FROM
+                            artist
+                        JOIN album_artist ON artist.id = album_artist.artist_id
+                        WHERE
+                            album_artist.album_id = ?;`;
+    queryParams.push(albumId);
+
+    const genreQuery = `SELECT
+                            genre.id as genre_id,
+                            genre.genre_name
+                        FROM
+                            genre
+                        JOIN album_genre ON genre.id = album_genre.genre_id
+                        WHERE
+                            album_genre.album_id = ?;`;
+    queryParams.push(albumId);
+
+    const recordLabelQuery = `SELECT
+                                record_company.id as record_company_id,
+                                record_company.company_name
+                            FROM
+                                record_company
+                            JOIN album_record_company ON record_company.id = album_record_company.record_company_id
+                            WHERE
+                                album_record_company.album_id = ?;`;
+    queryParams.push(albumId);
+
+    const trackQuery = `SELECT 
+                            id as track_id,
+                            track_title,
+                            duration
+                        FROM
+                            track
+                        WHERE
+                            album_id = ?;`;
+    queryParams.push(albumId);
+    
+    const commentQuery = `SELECT 
+                            comment.id as comment_id,
+                            comment.user_id,
+                            comment.comment,
+                            comment.created_datetime 
+                        FROM 
+                            comment 
+                        JOIN comment_album ON comment.id = comment_album.comment_id
+                        WHERE
+                            comment_album.album_id = ?;`;
+    queryParams.push(albumId);
+
+    const averageRatingQuery = `SELECT AVG(rating) as average_rating FROM rating_album WHERE album_id = ?;`;
+    queryParams.push(albumId);
+
+    // create final queries execution and params
+    executionQueries = albumQuery + artistQuery + genreQuery + recordLabelQuery + trackQuery + commentQuery + averageRatingQuery;
+
+    const data = await db.execute(executionQueries, queryParams);
+
+    const album = data[0][0];
+    album.artists = data[1];
+    album.genres = data[2];
+    album.record_labels = data[3];
+    album.tracks = data[4];
+    album.comments = data[5];
+    album.average_rating = data[6][0].average_rating;
+
+    return album;
 }
 
 module.exports = {
