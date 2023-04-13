@@ -1,6 +1,7 @@
 const db = require('../utils/db-execution.util');
 const passwordUtil = require('../utils/password-hash.util');
 const jwt = require('jsonwebtoken');
+const createError = require('http-errors');
 
 async function createUser(userData) {
     // unbox userData
@@ -14,7 +15,7 @@ async function createUser(userData) {
     const findEmail = await db.execute(findEmailQuery, [email_address]);
 
     if (findEmail.length > 0) {
-        throw new Error("This email address already existed!")
+        throw new createError.BadRequest("This email address already existed!")
     }
 
     // Reject any username already existed
@@ -22,7 +23,7 @@ async function createUser(userData) {
     const findUsername = await db.execute(findUsernameQuery, [username]);
 
     if (findUsername.length > 0) {
-        throw new Error("This username already existed!")
+        throw new createError.BadRequest("This username already existed!")
     }
 
     // hash password
@@ -43,7 +44,7 @@ async function authenticate(userData) {
     const { username, password } = userData;
 
     // find user with their input username, which could be either username or email
-    const findUserQuery = `SELECT * FROM user WHERE username = ? OR email_address = ?`;
+    const findUserQuery = `SELECT id, username, email_address, password FROM user WHERE username = ? OR email_address = ?`;
     const findUser = await db.execute(findUserQuery, [username, username]);
 
     let successLogin = false;
@@ -60,13 +61,12 @@ async function authenticate(userData) {
                 { algorithm: 'HS256', audience: 'member'}
                 )
             successLogin = true;
-
-            return token;
+            return { access_token: token, username: findUser[0].username };
         }
     }
 
     if (!successLogin) {
-        throw new Error("Incorrect username or password. Please try again.");
+        throw new createError.Unauthorized("Incorrect username or password. Please try again.");
     }
 
 }

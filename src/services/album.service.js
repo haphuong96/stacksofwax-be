@@ -94,6 +94,11 @@ async function findAllAlbum(limit, offset, filters) {
     queryParam.splice(pagIndex, 0, limit, offset); // add limit offset to query params
     
     // Query to be executed. Apply LIMIT and OFFSET for pagination.
+    /**
+     * Main execution query.
+     * @return An array of data with the following results: 
+     * - Album lists with paginated results. 
+     */
     const query =   `SELECT 
                         album.id as album_id, 
                         album.album_title, 
