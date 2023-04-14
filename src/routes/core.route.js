@@ -7,6 +7,7 @@ const collectionController = require('../controllers/collection.controller');
 
 router.get('/albums', albumController.getAllAlbum);
 router.get('/albums/:albumId', albumController.getAlbumById);
+router.get('/albums-filter', albumController.getAlbumFilter);
 
 router.get('/collections', collectionController.getAllCollection);
 router.get('/collections/:collectionId', collectionController.getCollectionById);
