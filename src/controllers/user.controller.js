@@ -1,4 +1,5 @@
 const userService = require('../services/user.service');
+const userSerializer = require('../serializers/user.serializer');
 
 async function registerUser(req, res, next) {
     try {
@@ -19,6 +20,9 @@ async function login(req, res, next) {
 
         const auth = await userService.authenticate(userData);
 
+        const serializedUser = userSerializer.transformUser(auth.user);
+        auth.user = serializedUser;
+        
         res.status(200).send(auth);
     } catch (err) {
         next(err);

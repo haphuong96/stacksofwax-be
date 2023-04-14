@@ -61,7 +61,7 @@ async function authenticate(userData) {
                 { algorithm: 'HS256', audience: 'member'}
                 )
             successLogin = true;
-            return { access_token: token, username: findUser[0].username };
+            return { access_token: token, user: findUser[0] };
         }
     }
 

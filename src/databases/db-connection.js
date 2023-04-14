@@ -10,13 +10,13 @@ const pool = mysql.createPool({
     queueLimit: 10
 })    
 
-const connection = mysql.createConnection({
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    database: process.env.MYSQL_DB,
-    port: process.env.MYSQL_PORT,
-    multipleStatements: true
-});
+// const connection = mysql.createConnection({
+//     host: process.env.MYSQL_HOST,
+//     user: process.env.MYSQL_USER,
+//     database: process.env.MYSQL_DB,
+//     port: process.env.MYSQL_PORT,
+//     multipleStatements: true
+// });
 
 
 pool.getConnection((err)=>{
@@ -25,4 +25,4 @@ pool.getConnection((err)=>{
 });
 
 
-module.exports = connection;
+module.exports = pool;

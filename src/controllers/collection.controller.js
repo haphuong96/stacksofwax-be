@@ -11,9 +11,13 @@ async function getAllCollection(req, res) {
 
 async function getCollectionById(req, res) {
     try {
-        let collectionId = req.params.collectionId;
+        const collectionId = req.params.collectionId;
 
-        let collection = await collectionService.findCollectionById(collectionId);
+        const data = await collectionService.findCollectionById(collectionId);
+        const collection = data.collection;
+        collection.albums = data.collectionAlbums;
+        collection.created_by = data.createdByUser;
+        
         res.status(200).send(collection);
     } catch (err) {
         next(err);
@@ -23,8 +27,11 @@ async function getCollectionById(req, res) {
 
 async function postCollection(req, res, next) {
     try {
+        // get user who created post
+        const userId = req.body.user_id;
+        console.log(userId);
         // create collection
-        let newCollectionCreated = await collectionService.createCollection();
+        const newCollectionCreated = await collectionService.createCollection(userId);
         res.status(201).send(newCollectionCreated);
     } catch (err) {
         next(err);
