@@ -2,14 +2,14 @@ const collectionService = require('../services/collection.service');
 
 async function getAllCollection(req, res) {
     try {
-        let collections = await collectionService.findAllCollection(req);
+        const  collections = await collectionService.findAllCollection(req);
         res.status(200).send(collections);
     } catch (err) {
         next(err);
     }
 }
 
-async function getCollectionById(req, res) {
+async function getCollectionById(req, res, next) {
     try {
         const collectionId = req.params.collectionId;
 
@@ -24,6 +24,17 @@ async function getCollectionById(req, res) {
     }
 }
 
+async function getMyCollections(req, res, next) {
+    try {
+        const userId = req.tokenDecoded.userId;
+
+        const data = await collectionService.findCollectionByUserId(userId);
+
+        return res.status(200).send(data);
+    } catch (err) {
+        next(err)
+    }
+}
 
 async function postCollection(req, res, next) {
     try {
@@ -55,6 +66,7 @@ async function updateCollection(req, res, next) {
 module.exports = {
     getAllCollection,
     getCollectionById,
+    getMyCollections,
     postCollection,
     updateCollection
 };

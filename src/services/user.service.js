@@ -44,7 +44,7 @@ async function authenticate(userData) {
     const { username, password } = userData;
 
     // find user with their input username, which could be either username or email
-    const findUserQuery = `SELECT id, username, email_address, password FROM user WHERE username = ? OR email_address = ?`;
+    const findUserQuery = `SELECT id, password FROM user WHERE username = ? OR email_address = ?`;
     const findUser = await db.execute(findUserQuery, [username, username]);
 
     let successLogin = false;
@@ -56,12 +56,18 @@ async function authenticate(userData) {
         if (hashPw === storedPw) {
             // create JWT token
             const token = jwt.sign(
-                { user: username, exp: Math.floor(Date.now() / 1000) + (60 * 30) },
+                {   
+                    userId: findUser[0].id, 
+                    exp: Math.floor(Date.now() / 1000) + (60 * 30) 
+                },
                 process.env.SECRET_KEY,
-                { algorithm: 'HS256', audience: 'member'}
-                )
+                { 
+                    algorithm: 'HS256', 
+                    audience: 'member' 
+                }
+            )
             successLogin = true;
-            return { access_token: token, user: findUser[0] };
+            return { access_token: token };
         }
     }
 
@@ -72,11 +78,14 @@ async function authenticate(userData) {
 }
 
 
-async function getUserById() {
-
+async function getUserById(userId) {
+    const query = ` SELECT id as user_id, username, email_address, password FROM user WHERE id = ?`;
+    const findUser = await db.execute(query, [userId]);
+    return findUser[0];
 }
 
 module.exports = {
     createUser,
-    authenticate
+    authenticate,
+    getUserById
 }

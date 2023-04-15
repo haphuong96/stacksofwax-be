@@ -21,17 +21,6 @@ async function findAllAlbum(limit, offset, filters) {
     const queryParam = [];
 
     /**
-     * queryFilter is used to filter results by the specified query string params.
-     * @type string
-     */
-    let queryFilter;
-    /**
-     * queryFilterCount is used to count the number of records by executing queryFilter, regardless of pagination.
-     * @type string
-     */
-    let queryFilterCount;
-
-    /**
      * SELECT clause for queryFilter
      */
     const selectQueryFilter = `SELECT 
@@ -93,8 +82,17 @@ async function findAllAlbum(limit, offset, filters) {
     joinsStatement = (joinsList.length > 0) ? joinsList.join(" ") : '';
 
     // Prepare final filter queries to be executed
-    queryFilter = selectQueryFilter + joinsStatement + whereStatement + pagination;
-    queryFilterCount = selectQueryFilterCount + joinsStatement + whereStatement;
+    /**
+     * queryFilter is used to filter results by the specified query string params.
+     * @type string
+     */
+    const queryFilter = selectQueryFilter + joinsStatement + whereStatement + pagination;
+
+    /**
+     * queryFilterCount is used to count the number of records by executing queryFilter, regardless of pagination.
+     * @type string
+     */
+    const queryFilterCount = selectQueryFilterCount + joinsStatement + whereStatement;
 
     // Prepare query params to be executed. Include limit, offset and query filter count param.
     const pagIndex = queryParam.length;
@@ -129,7 +127,7 @@ async function findAllAlbum(limit, offset, filters) {
         */
         const artistData = await db.execute(albumArtistQuery);
 
-        serializer.transformAlbum(filterAlbums[0], "album_id", [{ propertyName: "artists", data: artistData }]);
+        serializer.transformData(filterAlbums[0], "album_id", [{ propertyName: "artists", data: artistData }]);
     }
 
     return {

@@ -74,6 +74,24 @@ async function findCollectionById(collectionId) {
     };
 }
 
+async function findCollectionByUserId(userId) {
+    const query = ` SELECT 
+                        id AS collection_id,
+                        collection_name,
+                        collection_desc,
+                        img_path,
+                        created_by,
+                        last_updated_datetime,
+                        created_datetime 
+                    FROM 
+                        album_collection 
+                    WHERE 
+                        created_by = ?`;
+    
+    const data = await db.execute(query, [userId]);
+    return data[0];
+}
+
 /**
  * 
  * @param {number} userId 
@@ -134,5 +152,6 @@ module.exports = {
     findAllCollection,
     createCollection,
     findCollectionById,
-    updateCollection
+    updateCollection,
+    findCollectionByUserId
 };

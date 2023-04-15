@@ -6,7 +6,7 @@
  * @param {string} key Key of main data set. This key must be present in every mainDataset element and in every data element of every child dataset 
  * @returns 
  */
-function transformAlbum(mainDataset, key, childDatasetList) {
+function transformData(mainDataset, key, childDatasetList) {
   /**
    * Create a map of key and each main dataset object.
    */
@@ -55,4 +55,4 @@ function transformAlbum(mainDataset, key, childDatasetList) {
   // return Array.from(resultAlbums.values());
 }
 
-module.exports = { transformAlbum };
+module.exports = { transformData };

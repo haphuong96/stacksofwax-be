@@ -5,10 +5,11 @@ function authorizeUser(req, _res, next) {
     const authToken = req.get('Authorization');
 
     try {
-        jwt.verify(authToken.substring(7), process.env.SECRET_KEY, { algorithm: 'HS256', audience: 'member' });
+        const decoded = jwt.verify(authToken.substring(7), process.env.SECRET_KEY, { algorithm: 'HS256', audience: 'member' });
+        req.tokenDecoded = decoded;
         next();
     } catch (err) {
-        let unauthorizedException = new createError.Unauthorized("Unauthorized access.");
+        const unauthorizedException = new createError.Unauthorized("Unauthorized access.");
         next(unauthorizedException);
     }
 
