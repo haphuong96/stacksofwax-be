@@ -1,42 +1,48 @@
 const db = require('../utils/db-execution.util');
+const serializer = require('../serializers/common.serializer');
 
 /**
+ * Find albums with filter/search function and pagination.
+ * Steps include:
+ * - Build filter/search query
+ * - Execute filter/search query
+ * - Build album result data set
  * 
  * @param {number} limit 
  * @param {number} offset 
  * @param {{genreIds: string[], decade: number}} filters 
- * @returns
+ * @returns total album records (no pagination) and albums dataset (with pagination) 
  */
 async function findAllAlbum(limit, offset, filters) {
     /**
-     * Main table to execute search/filter on
-     */
-    const mainTable = `album`;
-    /**
-     * List of params to pass to main execution query
+     * List of params to pass to queryFilter execution
      * @type string[]
      */
     const queryParam = [];
 
     /**
-     * queryFilter is used in the main execution query to filter results by the specified query string params.
+     * queryFilter is used to filter results by the specified query string params.
      * @type string
      */
     let queryFilter;
     /**
-     * queryFilterCount is used in the main execution query to count the number of records by executing queryFilter, regardless of pagination.
+     * queryFilterCount is used to count the number of records by executing queryFilter, regardless of pagination.
      * @type string
      */
     let queryFilterCount;
-    
+
     /**
      * SELECT clause for queryFilter
      */
-    const selectQueryFilter = `SELECT ${mainTable}.id as album_id FROM ${mainTable}`;
+    const selectQueryFilter = `SELECT 
+                                    album.id as album_id, 
+                                    album.album_title, 
+                                    album.release_year 
+                                FROM album`;
     /**
      * SELECT clause for queryFilterCount
      */
-    const selectQueryFilterCount = `SELECT COUNT(${mainTable}.id) as total FROM ${mainTable}`;
+    const selectQueryFilterCount = `SELECT COUNT(album.id) as total FROM album`;
     /**
      * WHERE clause for queryFilter and queryFilterCount
      * @type string
@@ -46,7 +52,12 @@ async function findAllAlbum(limit, offset, filters) {
      * JOIN clauses for queryFilter and queryFilterCount
      * @type string
      */
-    let joins;
+    let joinsStatement;
+
+    /**
+     * Pagination for queryFilter
+     */
+    const pagination = ` LIMIT ? OFFSET ?;`;
 
     // List of JOIN statements and WHERE statements, used to build joins and whereStatement
     const joinsList = [];
@@ -56,35 +67,34 @@ async function findAllAlbum(limit, offset, filters) {
     const genreIds = filters.genreIds;
     const decade = filters.decade;
 
-    // build joins list
+    // build joinsList and whereClausesList
     // For genre filtering, users can filter albums that fall under 1, 2 or more genres. It indicates AND relationship and each genre filter could be expressed with an INNTER JOIN.
     // For example, 'OK Computer' album falls both in 'Rock' and 'Alternative Rock' genre. 
     // When user selects 'Rock' and 'Alternative Rock', it should only show albums that falls both in these 2 genres, like 'OK Computer'.
-    
+
     if (genreIds) {
         genreIds.forEach((genreId, index) => {
-            joinsList.push(` JOIN album_genre ag${index + 1} ON ag${index + 1}.album_id = ${mainTable}.id `);
+            joinsList.push(` JOIN album_genre ag${index + 1} ON ag${index + 1}.album_id = album.id `);
             whereClausesList.push(`ag${index + 1}.genre_id = ?`);
             queryParam.push(genreId);
         })
-
     }
 
     if (decade) {
-        whereClausesList.push(`${mainTable}.release_year BETWEEN ? AND ?`);
+        whereClausesList.push(`album.release_year BETWEEN ? AND ?`);
         queryParam.push(decade, decade + 9)
     }
 
     // build Where statement.
     // Represent AND relationship between expressions.
-    whereStatement = (whereClausesList.length > 0)? ` WHERE ` + whereClausesList.join(" AND ") : '';
+    whereStatement = (whereClausesList.length > 0) ? ` WHERE ` + whereClausesList.join(" AND ") : '';
 
     // build Joins statement.
-    joins = (joinsList.length > 0)? joinsList.join(" ") : '';
+    joinsStatement = (joinsList.length > 0) ? joinsList.join(" ") : '';
 
     // Prepare final filter queries to be executed
-    queryFilter = selectQueryFilter + joins + whereStatement;
-    queryFilterCount = selectQueryFilterCount + joins + whereStatement;
+    queryFilter = selectQueryFilter + joinsStatement + whereStatement + pagination;
+    queryFilterCount = selectQueryFilterCount + joinsStatement + whereStatement;
 
     // Prepare query params to be executed. Include limit, offset and query filter count param.
     const pagIndex = queryParam.length;
@@ -92,52 +102,52 @@ async function findAllAlbum(limit, offset, filters) {
         queryParam.push(value);
     }) // replicate array to get query filter count
     queryParam.splice(pagIndex, 0, limit, offset); // add limit offset to query params
-    
-    // Query to be executed. Apply LIMIT and OFFSET for pagination.
+
     /**
-     * Main execution query.
-     * @return An array of data with the following results: 
-     * - Album lists with paginated results. 
+     * Execute queryFilter and queryFilterCount, returns:
+     * - data[0]: List of albums, filtered and paginated
+     * - data[1]: Total number of albums, filtered
      */
-    const query =   `SELECT 
-                        album.id as album_id, 
-                        album.album_title, 
-                        album.release_year, 
-                        artist.id as artist_id, 
-                        artist.artist_name 
-                    FROM
-                        (${queryFilter}
-                        LIMIT ?
-                        OFFSET ?) as pagination
-                    JOIN album ON pagination.album_id = album.id
-                    JOIN album_artist ON pagination.album_id = album_artist.album_id
-                    JOIN artist ON artist.id = album_artist.artist_id;
-                        
-                    ${queryFilterCount};
-                        
-                    SELECT TRUNCATE(release_year, -1) as decade FROM album GROUP BY decade DESC;`;
-    
-    const data = await db.execute(query, queryParam);
+    const filterAlbums = await db.execute(queryFilter + queryFilterCount, queryParam);
+
+    if (filterAlbums[0].length > 0) {
+        const filterAlbumIds = filterAlbums[0].map(album => album.album_id).join(", ");
+        /**
+         * Queries to fetch artist data for albums retrieved in previous query (queryFilter)
+         */
+        const albumArtistQuery = `SELECT
+                                    album_artist.album_id,
+                                    artist.id as artist_id,
+                                    artist.artist_name
+                                FROM
+                                    artist
+                                JOIN album_artist ON artist.id = album_artist.artist_id
+                                WHERE 
+                                    album_artist.album_id IN (${filterAlbumIds})`
+        /**
+        * Child artists data
+        */
+        const artistData = await db.execute(albumArtistQuery);
+
+        serializer.transformAlbum(filterAlbums[0], "album_id", [{ propertyName: "artists", data: artistData }]);
+    }
 
     return {
-        total: data[1][0].total,
-        albums: data[0],
-        decades: data[2]
+        /**
+         * @type number
+         */
+        total: filterAlbums[1][0].total,
+        /**
+         * @type Array.<{album_id: number, album_title: string, release_year: number, artists: Array.<{artist_id: number, artist_name: string}>}>
+         */
+        albums: filterAlbums[0]
     };
 
 }
 
 /**
- * 
  * @param {number} albumId 
- * @returns An album object, with the following album data:
- * - album title, release year, img
- * - artists
- * - genres
- * - record labels
- * - tracks
- * - comments
- * - average rating
+ * @returns
  */
 async function findAlbumById(albumId) {
     /**
@@ -147,7 +157,7 @@ async function findAlbumById(albumId) {
     /**
      * List of params to be executed
      */
-    const queryParams = []; 
+    const queryParams = [];
 
     const albumQuery = `SELECT 
                             id as album_id,
@@ -199,7 +209,7 @@ async function findAlbumById(albumId) {
                         WHERE
                             album_id = ?;`;
     queryParams.push(albumId);
-    
+
     const commentQuery = `SELECT 
                             comment.id as comment_id,
                             comment.user_id,
@@ -220,15 +230,38 @@ async function findAlbumById(albumId) {
 
     const data = await db.execute(executionQueries, queryParams);
 
-    const album = data[0][0];
-    album.artists = data[1];
-    album.genres = data[2];
-    album.record_labels = data[3];
-    album.tracks = data[4];
-    album.comments = data[5];
-    album.average_rating = data[6][0].average_rating;
+    const { album_id, album_title, release_year, img_path } = data[0][0];
 
-    return album;
+    return {
+        album_id,
+        album_title,
+        release_year,
+        img_path,
+        /**
+         * @type Array.<{artist_id: number, artist_name: string}>
+         */
+        artists: data[1],
+        /**
+         * @type Array.<{genre_id: number, genre_name: string}>
+         */
+        genres: data[2],
+        /**
+         * @type Array.<{record_company_id: number, company_name: string}>
+         */
+        record_labels: data[3],
+        /**
+         * @type Array.<{track_id: number, track_title: string, duration: string}>
+         */
+        tracks: data[4],
+        /**
+         * @type Array.<{comment_id: number, user_id: number, comment: string, created_datetime: string}>
+         */
+        comments: data[5],
+        /**
+         * @type number
+         */
+        average_rating: data[6][0].average_rating
+    }
 }
 
 module.exports = {
