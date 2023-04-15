@@ -12,13 +12,10 @@ app.use(cors({
     origin: process.env.FE_DOMAIN
 }));
 
-const core = require('./src/routes/core.route');
-const users = require('./src/routes/users.route');
-
+const routes = require('./src/routes/routes');
 
 // routes
-app.use('/api', core);
-app.use('/api', users);
+app.use('/api', routes);
 
 // middlewares error handler
 app.use(globalErrHandler);
