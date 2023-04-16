@@ -34,7 +34,7 @@ async function findCollectionById(collectionId) {
                         ac.id = ?;
                     `;
     queryParams.push(collectionId);
-    
+
     const albumQuery = `SELECT 
                             ab.id as album_id,
                             ab.album_title,
@@ -60,22 +60,22 @@ async function findCollectionById(collectionId) {
                             ac.id = ?`
     queryParams.push(collectionId);
 
-    executionQuery = collectionQuery + albumQuery + userQuery; 
+    executionQuery = collectionQuery + albumQuery + userQuery;
     const data = await db.execute(executionQuery, queryParams);
 
     const collection = data[0][0];
     const collectionAlbums = data[1];
     const createdByUser = data[2][0];
 
-    return { 
+    return {
         collection,
         collectionAlbums,
         createdByUser
     };
 }
 
-async function findCollectionByUserId(userId) {
-    const query = ` SELECT 
+async function findCollectionByUserId(limit, offset, userId) {
+    const collectionQuery = ` SELECT 
                         id AS collection_id,
                         collection_name,
                         collection_desc,
@@ -86,12 +86,24 @@ async function findCollectionByUserId(userId) {
                     FROM 
                         album_collection 
                     WHERE 
-                        created_by = ?`;
-    
-    const data = await db.execute(query, [userId]);
-    return data[0];
-}
+                        created_by = ?
+                    LIMIT ?
+                    OFFSET ?;
+                `;
 
+    const countCollectionQuery = `SELECT 
+                                    COUNT(id) as total 
+                                FROM 
+                                    album_collection 
+                                WHERE 
+                                    created_by = ?;`
+
+    const data = await db.execute(collectionQuery + countCollectionQuery, [userId, limit, offset, userId]);
+    return {
+        total: data[1][0].total,
+        collections: data[0]
+    }
+}
 /**
  * 
  * @param {number} userId 

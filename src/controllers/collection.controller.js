@@ -27,8 +27,10 @@ async function getCollectionById(req, res, next) {
 async function getMyCollections(req, res, next) {
     try {
         const userId = req.tokenDecoded.userId;
+        const limit = parseInt(req.query.limit);
+        const offset = parseInt(req.query.offset);
 
-        const data = await collectionService.findCollectionByUserId(userId);
+        const data = await collectionService.findCollectionByUserId(limit, offset, userId);
 
         return res.status(200).send(data);
     } catch (err) {
