@@ -4,8 +4,9 @@ async function getAllArtist(req, res, next) {
     try {
         const limit = parseInt(req.query.limit);
         const offset = parseInt(req.query.offset);
-        const artists = await artistService.findAllArtist(limit, offset);
-        res.status(200).send(artists);
+        const data = await artistService.findAllArtist(limit, offset);
+
+        res.status(200).send(data);
     } catch (err) {
         next(err);
     }

@@ -1,8 +1,12 @@
 const collectionService = require('../services/collection.service');
 
-async function getAllCollection(req, res) {
+async function getAllCollection(req, res, next) {
     try {
-        const  collections = await collectionService.findAllCollection(req);
+        const limit = parseInt(req.query.limit);
+        const offset = parseInt(req.query.offset);
+        const sort = req.query.sort || [];
+
+        const collections = await collectionService.findAllCollection(limit, offset, sort);
         res.status(200).send(collections);
     } catch (err) {
         next(err);

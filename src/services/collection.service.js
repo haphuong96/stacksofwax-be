@@ -1,12 +1,36 @@
 const db = require('../utils/db-execution.util');
 
 
-async function findAllCollection(req) {
+async function findAllCollection(limit, offset, sort) {
+    const pagination = `LIMIT ? OFFSET ?`;
 
-    const query = 'SELECT * FROM album_collection';
-    const data = await db.execute(query);
+    const orderByQuery = (sort.length > 0) ? sort.map(column => {
+        if (!column.startsWith('-')) return `${column} ASC`;
+        return `${column.replace('-', '')} DESC`
+    }).join(', ') : '';
 
-    return data;
+    const collectionQuery = `SELECT 
+                    id AS collection_id,
+                    collection_name,
+                    collection_desc,
+                    img_path,
+                    created_by,
+                    last_updated_datetime,
+                    created_datetime 
+                FROM 
+                    album_collection `;
+    
+    const query = collectionQuery + orderByQuery + pagination + ";";
+    
+    const countQuery = ` SELECT COUNT(id) AS total FROM album_collection;`;
+
+    const data = await db.execute(query+countQuery, [limit, offset]);
+
+    const { total } = data[1][0];
+    return {
+        total,
+        collections : data[0]
+    };
 
 }
 
@@ -76,20 +100,20 @@ async function findCollectionById(collectionId) {
 
 async function findCollectionByUserId(limit, offset, userId) {
     const collectionQuery = ` SELECT 
-                        id AS collection_id,
-                        collection_name,
-                        collection_desc,
-                        img_path,
-                        created_by,
-                        last_updated_datetime,
-                        created_datetime 
-                    FROM 
-                        album_collection 
-                    WHERE 
-                        created_by = ?
-                    LIMIT ?
-                    OFFSET ?;
-                `;
+                                id AS collection_id,
+                                collection_name,
+                                collection_desc,
+                                img_path,
+                                created_by,
+                                last_updated_datetime,
+                                created_datetime 
+                            FROM 
+                                album_collection 
+                            WHERE 
+                                created_by = ?
+                            LIMIT ?
+                            OFFSET ?;
+                        `;
 
     const countCollectionQuery = `SELECT 
                                     COUNT(id) as total 

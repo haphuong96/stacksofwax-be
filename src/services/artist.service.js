@@ -3,10 +3,17 @@ const db = require('../utils/db-execution.util');
 
 async function findAllArtist(limit, offset) {
 
-    const query = 'SELECT id as artist_id, artist_name, artist_description, img_path FROM artist LIMIT ? OFFSET ?';
-    const data = await db.execute(query, [limit, offset]);
+    const artistQuery = `SELECT id as artist_id, artist_name, artist_description, img_path FROM artist LIMIT ? OFFSET ?;`;
+    const countQuery = ` SELECT COUNT(id) AS total FROM artist;`
+    
+    const data = await db.execute(artistQuery + countQuery, [limit, offset]);
 
-    return data;
+    const { total } = data[1][0];
+
+    return {
+        total,
+        artists : data[0]
+    };
 
 }
 
@@ -72,7 +79,7 @@ async function findAllArtist(limit, offset) {
 //         collectionAlbums,
 //         createdByUser
 //     };
-}
+// }
 
 
 module.exports = {
