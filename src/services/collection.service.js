@@ -1,8 +1,9 @@
+const createHttpError = require('http-errors');
 const db = require('../utils/db-execution.util');
-
+const createError = require('http-errors');
 
 async function findAllCollection(limit, offset, sort) {
-    const pagination = `LIMIT ? OFFSET ?`;
+    const pagination = ` LIMIT ? OFFSET ? `;
 
     const orderByQuery = (sort.length > 0) ? sort.map(column => {
         if (!column.startsWith('-')) return `${column} ASC`;
@@ -10,15 +11,17 @@ async function findAllCollection(limit, offset, sort) {
     }).join(', ') : '';
 
     const collectionQuery = `SELECT 
-                    id AS collection_id,
-                    collection_name,
-                    collection_desc,
-                    img_path,
-                    created_by,
-                    last_updated_datetime,
-                    created_datetime 
-                FROM 
-                    album_collection `;
+                                ac.id AS collection_id,
+                                ac.collection_name,
+                                ac.collection_desc,
+                                ac.img_path,
+                                ac.last_updated_datetime,
+                                ac.created_datetime,
+                                u.id AS created_by,
+                                u.username
+                            FROM 
+                                album_collection ac
+                            JOIN user u ON ac.created_by = u.id`;
     
     const query = collectionQuery + orderByQuery + pagination + ";";
     
@@ -27,6 +30,7 @@ async function findAllCollection(limit, offset, sort) {
     const data = await db.execute(query+countQuery, [limit, offset]);
 
     const { total } = data[1][0];
+
     return {
         total,
         collections : data[0]
@@ -49,11 +53,13 @@ async function findCollectionById(collectionId) {
                         ac.collection_name,
                         ac.collection_desc,
                         ac.img_path,
-                        ac.created_by,
                         ac.last_updated_datetime,
-                        ac.created_datetime 
+                        ac.created_datetime,
+                        u.id AS user_id,
+                        u.username
                     FROM 
                         album_collection ac
+                    JOIN user u ON ac.created_by = u.id
                     WHERE 
                         ac.id = ?;
                     `;
@@ -74,43 +80,38 @@ async function findCollectionById(collectionId) {
                         `
     queryParams.push(collectionId);
 
-    const userQuery = `SELECT
-                            u.id AS user_id,
-                            u.username
-                        FROM
-                            album_collection ac
-                        JOIN user u ON ac.created_by = u.id
-                        WHERE 
-                            ac.id = ?`
-    queryParams.push(collectionId);
-
-    executionQuery = collectionQuery + albumQuery + userQuery;
+    executionQuery = collectionQuery + albumQuery;
     const data = await db.execute(executionQuery, queryParams);
 
-    const collection = data[0][0];
+    const { user_id, username, ...collection } = data[0][0];
     const collectionAlbums = data[1];
-    const createdByUser = data[2][0];
 
     return {
-        collection,
-        collectionAlbums,
-        createdByUser
+        ...collection,
+        created_by: {
+            user_id,
+            username
+        },
+        albums: collectionAlbums
     };
 }
 
 async function findCollectionByUserId(limit, offset, userId) {
     const collectionQuery = ` SELECT 
-                                id AS collection_id,
-                                collection_name,
-                                collection_desc,
-                                img_path,
-                                created_by,
-                                last_updated_datetime,
-                                created_datetime 
+                                ac.id AS collection_id,
+                                ac.collection_name,
+                                ac.collection_desc,
+                                ac.img_path,
+                                ac.created_by,
+                                ac.last_updated_datetime,
+                                ac.created_datetime,
+                                u.id AS created_by,
+                                u.username
                             FROM 
-                                album_collection 
+                                album_collection ac
+                            JOIN user u ON ac.created_by = u.id
                             WHERE 
-                                created_by = ?
+                                ac.created_by = ?
                             LIMIT ?
                             OFFSET ?;
                         `;
@@ -163,23 +164,55 @@ async function createCollection(userId) {
  * @param {{collection_name: String}} newCollectionData 
  * @returns 
  */
-async function updateCollection(collectionId, newCollectionData) {
+async function updateCollection(collectionId, userId, newCollectionData) {
     // check if collection exists 
     // if no collection found, throw exception
-    const collection = await findCollectionById(collectionId);
-    if (collection.length == 0) {
-        throw new Error("Collection not found!")
+    const findCollection = await findCollectionById(collectionId);
+    if (findCollection.length == 0) {
+        throw createError.BadRequest("Collection not found!");
+    }
+
+    // if user is not the creator of this collection, cannot update
+    if (findCollection.created_by.user_id !== userId) {
+        throw createError.BadRequest("User has no right to update this collection!")
     }
 
     // unbox collection data
     const { collection_name, collection_desc, img_path } = newCollectionData;
 
-    const query = `UPDATE album_collection SET collection_name = ?, collection_desc = ?, img_path = ?;
-                        SELECT * FROM album_collection WHERE id = ?`;
+    const query = `UPDATE 
+                        album_collection 
+                    SET 
+                        collection_name = ?, 
+                        collection_desc = ?
+                    WHERE 
+                        id = ?;
 
-    const data = await db.execute(query, [collection_name, collection_desc, img_path, collectionId]);
+                    SELECT 
+                        ac.id AS collection_id,
+                        ac.collection_name,
+                        ac.collection_desc,
+                        ac.img_path,
+                        ac.created_by,
+                        ac.last_updated_datetime,
+                        ac.created_datetime,
+                        u.id AS user_id,
+                        u.username 
+                    FROM album_collection ac
+                    JOIN user u ON ac.created_by = u.id 
+                    WHERE 
+                        ac.id = ?`;
 
-    return data[1];
+    const data = await db.execute(query, [collection_name, collection_desc, collectionId, collectionId]);
+
+    const {user_id, username, ...collection } = data[1][0];
+    return {
+        ...collection,
+        created_by : {
+            user_id,
+            username
+        }
+    };
 
 }
 

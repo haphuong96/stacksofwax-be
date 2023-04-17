@@ -18,11 +18,8 @@ async function getCollectionById(req, res, next) {
         const collectionId = req.params.collectionId;
 
         const data = await collectionService.findCollectionById(collectionId);
-        const collection = data.collection;
-        collection.albums = data.collectionAlbums;
-        collection.created_by = data.createdByUser;
         
-        res.status(200).send(collection);
+        res.status(200).send(data);
     } catch (err) {
         next(err);
     }
@@ -45,7 +42,7 @@ async function getMyCollections(req, res, next) {
 async function postCollection(req, res, next) {
     try {
         // get user who created post
-        const userId = req.body.user_id;
+        const userId = req.tokenDecoded.userId;
         console.log(userId);
         // create collection
         const newCollectionCreated = await collectionService.createCollection(userId);
@@ -57,14 +54,17 @@ async function postCollection(req, res, next) {
 
 async function updateCollection(req, res, next) {
     try {
-        let collectionId = req.params.collectionId;
-        let newCollectionData = req.body;
+        const collectionId = req.params.collectionId;
+        const userId = req.tokenDecoded.userId;
 
-        let updateCollection = await collectionService.updateCollection(collectionId, newCollectionData);
+        const newCollectionData = req.body;
+
+        const updateCollection = await collectionService.updateCollection(collectionId, userId, newCollectionData);
 
         res.status(200).send(updateCollection);
 
     } catch (err) {
+        console.log(err)
         next(err);
     }
 }
