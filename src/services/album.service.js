@@ -113,9 +113,6 @@ async function findAllAlbum(limit, offset, filters) {
      */
     const queryParams = whereParams.concat(orderByParams, paginationParams, whereParams);
 
-    console.log(queryFilter)
-    console.log(queryParams)
-
     /**
      * Execute queryFilter and queryFilterCount, returns:
      * - data[0]: List of albums, filtered and paginated

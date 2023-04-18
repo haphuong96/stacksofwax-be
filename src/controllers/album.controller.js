@@ -12,7 +12,7 @@ async function getAllAlbum(req, res, next) {
     const limit = parseInt(req.query.limit);
     const offset = parseInt(req.query.offset);
     const searchKeyword = req.query.search;
-    console.log(typeof searchKeyword)
+
     const data = await albumService.findAllAlbum(limit, offset, {
       searchKeyword,
       genreIds,

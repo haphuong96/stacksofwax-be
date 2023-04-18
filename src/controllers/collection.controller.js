@@ -16,8 +16,21 @@ async function getAllCollection(req, res, next) {
 async function getCollectionById(req, res, next) {
     try {
         const collectionId = req.params.collectionId;
+        const operation = req.query.operationName;
 
-        const data = await collectionService.findCollectionById(collectionId);
+        let data;
+        switch (operation) {
+            case 'fetchCollectionDetails':
+                data = await collectionService.findCollectionDetailsById(collectionId);
+                break;
+            case 'fetchCollectionAlbums': 
+                data = await collectionService.findCollectionAlbumDetailsById(collectionId);
+                break;
+            default:
+                data = [];
+        }
+
+        // const data = await collectionService.findCollectionById(collectionId);
 
         res.status(200).send(data);
     } catch (err) {
@@ -33,17 +46,40 @@ async function getMyCollections(req, res, next) {
 
         const data = await collectionService.findCollectionByUserId(limit, offset, userId);
 
-        return res.status(200).send(data);
+        res.status(200).send(data);
     } catch (err) {
         next(err)
     }
 }
 
+// async function getDraftCollectionDetails(req, res, next) {
+//     try {
+//         const collectionId = req.params.collectionId;
+//         const data = await collectionService.findCollectionDetailsById(collectionId);
+
+//         res.status(200).send(data);
+
+//     } catch (err) {
+//         next(err)
+//     }
+// }
+
+// async function getDraftCollectionAlbumDetails(req, res, next) {
+//     try {
+//         const collectionId = req.params.collectionId;
+//         const data = await collectionService.findCollectionAlbumDetailsById(collectionId);
+
+//         res.status(200).send(data);
+//     } catch (err) {
+//         next(err)
+//     }
+// }
+
 async function postCollection(req, res, next) {
     try {
         // get user who created post
         const userId = req.tokenDecoded.userId;
-        console.log(userId);
+
         // create collection
         const newCollectionCreated = await collectionService.createCollection(userId);
         res.status(201).send(newCollectionCreated);
@@ -81,11 +117,24 @@ async function postAlbumToCollection(req, res, next) {
     }
 }
 
+async function deleteAlbumFromCollection(req, res, next) {
+    try {
+        const collectionId = req.params.collectionId;
+        const albumId = req.body.album_id;
+        const data = await collectionService.deleteAlbumFromCollection(collectionId, albumId);
+
+        res.status(200).send({message: "Success"});
+    } catch (error) {
+        next(error)
+    }
+}
 module.exports = {
     getAllCollection,
     getCollectionById,
     getMyCollections,
     postCollection,
     updateCollection,
-    postAlbumToCollection
+    postAlbumToCollection,
+    deleteAlbumFromCollection
+
 };

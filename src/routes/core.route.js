@@ -16,9 +16,11 @@ router.get('/albums-filter', albumController.getAlbumFilter);
 router.get('/collections', collectionController.getAllCollection);
 router.get('/collections/:collectionId', collectionController.getCollectionById);
 router.get('/my-collections', userAuthorization, collectionController.getMyCollections);
+
 router.post('/collections', userAuthorization, collectionController.postCollection);
 router.put('/collections/:collectionId', userAuthorization, validateBodyGuard(updateCollectionSchema), collectionController.updateCollection);
-router.post('/collections/:collectionId/add-album', userAuthorization, collectionController.postAlbumToCollection)
+router.post('/my-collections/:collectionId/manage-album/add', userAuthorization, collectionController.postAlbumToCollection)
+router.delete('/my-collections/:collectionId/manage-album/delete', userAuthorization, collectionController.deleteAlbumFromCollection)
 
 router.get('/artists', artistController.getAllArtist);
 

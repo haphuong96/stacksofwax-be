@@ -96,6 +96,43 @@ async function findCollectionById(collectionId) {
     };
 }
 
+async function findCollectionDetailsById(collectionId) {
+    const query = `SELECT 
+                    ac.id as collection_id,
+                    ac.collection_name,
+                    ac.collection_desc,
+                    ac.img_path,
+                    ac.last_updated_datetime,
+                    ac.created_datetime,
+                    u.id AS user_id,
+                    u.username
+                FROM 
+                    album_collection ac
+                JOIN user u ON ac.created_by = u.id
+                WHERE 
+                    ac.id = ?;`
+    
+    const data = await db.execute(query, [collectionId]);
+    return data[0];
+}
+
+async function findCollectionAlbumDetailsById(collectionId) {
+    const query = `SELECT 
+                    ab.id as album_id,
+                    ab.album_title,
+                    at.id as artist_id,
+                    at.artist_name
+                FROM
+                    album_album_collection aac
+                JOIN album ab ON ab.id = aac.album_id
+                JOIN album_artist aat ON aat.album_id = ab.id
+                JOIN artist at ON aat.artist_id = at.id
+                WHERE
+                    aac.album_collection_id = ?;`
+    const data = await db.execute(query, [collectionId]);
+    return data;
+}
+
 async function findCollectionByUserId(limit, offset, userId) {
     const collectionQuery = ` SELECT 
                                 ac.id AS collection_id,
@@ -223,11 +260,22 @@ async function addAlbumToCollection(collectionId, albumId) {
     return data;
 }
 
+async function deleteAlbumFromCollection(collectionId, albumId) {
+    const query = `DELETE FROM album_album_collection WHERE album_collection_id = ? AND album_id = ?`
+    const data = await db.execute(query, [collectionId, albumId]);
+
+    return data;
+}
+
 module.exports = {
     findAllCollection,
     createCollection,
     findCollectionById,
     updateCollection,
     findCollectionByUserId,
-    addAlbumToCollection
+    addAlbumToCollection,
+    deleteAlbumFromCollection,
+    findCollectionDetailsById,
+    findCollectionAlbumDetailsById
+
 };
