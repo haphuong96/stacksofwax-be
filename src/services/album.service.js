@@ -14,11 +14,6 @@ const serializer = require('../serializers/common.serializer');
  * @returns total album records (no pagination) and albums dataset (with pagination) 
  */
 async function findAllAlbum(limit, offset, filters) {
-    /**
-     * List of params to pass to queryFilter execution
-     * @type string[]
-     */
-    const queryParam = [];
 
     /**
      * SELECT clause for queryFilter
@@ -32,61 +27,80 @@ async function findAllAlbum(limit, offset, filters) {
      * SELECT clause for queryFilterCount
      */
     const selectQueryFilterCount = `SELECT COUNT(album.id) as total FROM album`;
-    /**
-     * WHERE clause for queryFilter and queryFilterCount
-     * @type string
-     */
-    let whereStatement;
-    /**
-     * JOIN clauses for queryFilter and queryFilterCount
-     * @type string
-     */
-    let joinsStatement;
 
     /**
      * Pagination for queryFilter
      */
     const pagination = ` LIMIT ? OFFSET ?;`;
 
-    // List of JOIN statements and WHERE statements, used to build joins and whereStatement
+    // List of JOIN, WHERE, ORDER BY statements, used to build joins, whereStatement, and orderByStatement
     const joinsList = [];
     const whereClausesList = [];
+    const orderByList = [];
+
+    // List of WHERE, ORDER BY and pagination params to be passed to execution with the query.
+    const whereParams = [];
+    const orderByParams = [];
+    const paginationParams = [limit, offset];
 
     // Filter Params
     const genreIds = filters.genreIds;
     const decade = filters.decade;
+    const searchKeyword = filters.searchKeyword;
 
     // build joinsList and whereClausesList
     // For genre filtering, users can filter albums that fall under 1, 2 or more genres. It indicates AND relationship and each genre filter could be expressed with an INNTER JOIN.
     // For example, 'OK Computer' album falls both in 'Rock' and 'Alternative Rock' genre. 
     // When user selects 'Rock' and 'Alternative Rock', it should only show albums that falls both in these 2 genres, like 'OK Computer'.
 
+    // search title by keyword. Results are ordered by exact match first, then title starting with the search keyword, and otherwise all other results containing search keyword.
+    if (searchKeyword) {
+        whereClausesList.push(`album.album_title LIKE ?`);
+        whereParams.push(`%${searchKeyword}%`);
+        orderByList.push(`(CASE WHEN album_title = ? THEN 1 WHEN album_title LIKE ? THEN 2 ELSE 3 END)`);
+        orderByParams.push(searchKeyword, `${searchKeyword}%`)
+    }
+
     if (genreIds) {
         genreIds.forEach((genreId, index) => {
             joinsList.push(` JOIN album_genre ag${index + 1} ON ag${index + 1}.album_id = album.id `);
             whereClausesList.push(`ag${index + 1}.genre_id = ?`);
-            queryParam.push(genreId);
+            whereParams.push(genreId);
         })
     }
 
     if (decade) {
         whereClausesList.push(`album.release_year BETWEEN ? AND ?`);
-        queryParam.push(decade, decade + 9)
+        whereParams.push(decade, decade + 9)
     }
 
-    // build Where statement.
-    // Represent AND relationship between expressions.
-    whereStatement = (whereClausesList.length > 0) ? ` WHERE ` + whereClausesList.join(" AND ") : '';
+    /**
+     * Build Where statement.
+     * Represent AND relationship between expressions.
+     * WHERE clause for queryFilter and queryFilterCount
+     * @type string
+     */
+    const whereStatement = (whereClausesList.length > 0) ? ` WHERE ` + whereClausesList.join(" AND ") : '';
 
-    // build Joins statement.
-    joinsStatement = (joinsList.length > 0) ? joinsList.join(" ") : '';
+    /**
+     * Build Joins statement.
+     * JOIN clauses for queryFilter and queryFilterCount
+     * @type string
+     */
+    const joinsStatement = (joinsList.length > 0) ? joinsList.join(" ") : '';
+
+    /**
+     * Build ORDER BY statement
+     * ORDER BY clause for queryFilter
+     */
+    const orderByStatement = (orderByList.length > 0) ? ` ORDER BY ` + orderByList.join(", ") : '';
 
     // Prepare final filter queries to be executed
     /**
      * queryFilter is used to filter results by the specified query string params.
      * @type string
      */
-    const queryFilter = selectQueryFilter + joinsStatement + whereStatement + pagination;
+    const queryFilter = selectQueryFilter + joinsStatement + whereStatement + orderByStatement + pagination;
 
     /**
      * queryFilterCount is used to count the number of records by executing queryFilter, regardless of pagination.
@@ -94,19 +108,20 @@ async function findAllAlbum(limit, offset, filters) {
      */
     const queryFilterCount = selectQueryFilterCount + joinsStatement + whereStatement;
 
-    // Prepare query params to be executed. Include limit, offset and query filter count param.
-    const pagIndex = queryParam.length;
-    queryParam.forEach((value) => {
-        queryParam.push(value);
-    }) // replicate array to get query filter count
-    queryParam.splice(pagIndex, 0, limit, offset); // add limit offset to query params
+    /**
+     * queryParams used to escape queryFilter and queryFilterCount query params.
+     */
+    const queryParams = whereParams.concat(orderByParams, paginationParams, whereParams);
+
+    console.log(queryFilter)
+    console.log(queryParams)
 
     /**
      * Execute queryFilter and queryFilterCount, returns:
      * - data[0]: List of albums, filtered and paginated
      * - data[1]: Total number of albums, filtered
      */
-    const filterAlbums = await db.execute(queryFilter + queryFilterCount, queryParam);
+    const filterAlbums = await db.execute(queryFilter + queryFilterCount, queryParams);
 
     if (filterAlbums[0].length > 0) {
         const filterAlbumIds = filterAlbums[0].map(album => album.album_id).join(", ");

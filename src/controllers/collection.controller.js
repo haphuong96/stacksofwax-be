@@ -18,7 +18,7 @@ async function getCollectionById(req, res, next) {
         const collectionId = req.params.collectionId;
 
         const data = await collectionService.findCollectionById(collectionId);
-        
+
         res.status(200).send(data);
     } catch (err) {
         next(err);
@@ -69,10 +69,23 @@ async function updateCollection(req, res, next) {
     }
 }
 
+async function postAlbumToCollection(req, res, next) {
+    try {
+        const collectionId = req.params.collectionId;
+        const albumId = req.body.album_id;
+        const data = await collectionService.addAlbumToCollection(collectionId, albumId);
+
+        res.status(200).send({message: "Success"});
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     getAllCollection,
     getCollectionById,
     getMyCollections,
     postCollection,
-    updateCollection
+    updateCollection,
+    postAlbumToCollection
 };

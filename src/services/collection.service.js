@@ -216,11 +216,18 @@ async function updateCollection(collectionId, userId, newCollectionData) {
 
 }
 
+async function addAlbumToCollection(collectionId, albumId) {
+    const query = `INSERT INTO album_album_collection (album_collection_id, album_id) VALUES (?, ?);`;
+    const data = await db.execute(query, [collectionId, albumId]);
+
+    return data;
+}
 
 module.exports = {
     findAllCollection,
     createCollection,
     findCollectionById,
     updateCollection,
-    findCollectionByUserId
+    findCollectionByUserId,
+    addAlbumToCollection
 };
