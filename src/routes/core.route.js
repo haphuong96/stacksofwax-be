@@ -21,6 +21,10 @@ router.post('/collections', userAuthorization, collectionController.postCollecti
 router.put('/collections/:collectionId', userAuthorization, validateBodyGuard(updateCollectionSchema), collectionController.updateCollection);
 router.post('/my-collections/:collectionId/manage-album/add', userAuthorization, collectionController.postAlbumToCollection)
 router.delete('/my-collections/:collectionId/manage-album/delete', userAuthorization, collectionController.deleteAlbumFromCollection)
+router.post('/collections/:collectionId/like/post', userAuthorization, collectionController.likeCollection)
+router.delete('/collections/:collectionId/like/delete', userAuthorization, collectionController.unlikeCollection)
+router.get('/collections/:collectionId/like/check', userAuthorization, collectionController.checkUserLikedCollection)
+router.post('/collections/:collectionId/comment', userAuthorization, collectionController.postCommentCollection)
 
 router.get('/artists', artistController.getAllArtist);
 

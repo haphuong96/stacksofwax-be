@@ -26,11 +26,12 @@ async function getCollectionById(req, res, next) {
             case 'fetchCollectionAlbums': 
                 data = await collectionService.findCollectionAlbumDetailsById(collectionId);
                 break;
+            case 'fetchCollectionComments':
+                data = await collectionService.findCollectionCommentsById(collectionId);
+                break;
             default:
-                data = [];
+                data = await collectionService.findCollectionById(collectionId);
         }
-
-        // const data = await collectionService.findCollectionById(collectionId);
 
         res.status(200).send(data);
     } catch (err) {
@@ -52,28 +53,6 @@ async function getMyCollections(req, res, next) {
     }
 }
 
-// async function getDraftCollectionDetails(req, res, next) {
-//     try {
-//         const collectionId = req.params.collectionId;
-//         const data = await collectionService.findCollectionDetailsById(collectionId);
-
-//         res.status(200).send(data);
-
-//     } catch (err) {
-//         next(err)
-//     }
-// }
-
-// async function getDraftCollectionAlbumDetails(req, res, next) {
-//     try {
-//         const collectionId = req.params.collectionId;
-//         const data = await collectionService.findCollectionAlbumDetailsById(collectionId);
-
-//         res.status(200).send(data);
-//     } catch (err) {
-//         next(err)
-//     }
-// }
 
 async function postCollection(req, res, next) {
     try {
@@ -128,6 +107,58 @@ async function deleteAlbumFromCollection(req, res, next) {
         next(error)
     }
 }
+
+async function likeCollection(req, res, next) {
+    try {
+        const collectionId = req.params.collectionId;
+        const userId = req.tokenDecoded.userId;
+        const data = await collectionService.addLikeToCollection(collectionId, userId);
+
+        res.status(201).send({message: "success"})
+    } catch (error) {
+        next(error)
+    }
+}
+
+async function unlikeCollection(req, res, next) {
+    try {
+        const collectionId = req.params.collectionId;
+        const userId = req.tokenDecoded.userId;
+        const data = await collectionService.deleteLikeToCollection(collectionId, userId);
+
+        res.status(200).send({message: "success"})
+    } catch (error) {
+        next(error)
+    }
+}
+
+async function checkUserLikedCollection(req, res, next) {
+    try {
+        const collectionId = req.params.collectionId;
+        const userId = req.tokenDecoded.userId;
+        const data = await collectionService.findUserLikedCollection(collectionId, userId);
+
+        res.status(200).send({is_liked: data});
+
+    } catch (error) {
+        next(error)
+    }
+}
+
+async function postCommentCollection(req, res, next) {
+    try {
+        const collectionId = req.params.collectionId;
+        const userId = req.tokenDecoded.userId;
+        const comment = req.body.comment;
+
+        const data = await collectionService.createCommentCollection(collectionId, userId, comment);
+
+        res.status(201).send({message: "success"})
+    } catch (error) {
+        next(error)
+    }
+}
+
 module.exports = {
     getAllCollection,
     getCollectionById,
@@ -135,6 +166,9 @@ module.exports = {
     postCollection,
     updateCollection,
     postAlbumToCollection,
-    deleteAlbumFromCollection
-
+    deleteAlbumFromCollection,
+    likeCollection,
+    unlikeCollection,
+    checkUserLikedCollection,
+    postCommentCollection
 };
