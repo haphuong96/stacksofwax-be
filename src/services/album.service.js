@@ -111,7 +111,8 @@ async function findAllAlbum(limit, offset, filters) {
     /**
      * queryParams used to escape queryFilter and queryFilterCount query params.
      */
-    const queryParams = whereParams.concat(orderByParams, paginationParams, whereParams);
+    const queryParams = [...whereParams, ...orderByParams, ...paginationParams, ...whereParams]
+    // whereParams.concat(orderByParams, paginationParams, whereParams);
 
     /**
      * Execute queryFilter and queryFilterCount, returns:

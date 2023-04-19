@@ -148,13 +148,13 @@ async function findCollectionCommentsById(collectionId) {
                     FROM 
                         comment_collection coco 
                     JOIN comment com ON coco.comment_id = com.id
-                    JOIN user u ON u.id = com.id
+                    JOIN user u ON u.id = com.user_id
                     WHERE
                         coco.collection_id = ?
                     `
     const data = await db.execute(query, [collectionId]);
 
-    return data[0];
+    return data;
 }
 
 async function findCollectionByUserId(limit, offset, userId) {
@@ -334,7 +334,8 @@ async function createCommentCollection(collectionId, userId, comment) {
                             WHERE 
                                 id = LAST_INSERT_ID();`
     
-    const cmt = db.execute(insCmtQuery, [userId, comment]);
+    const cmt = await db.execute(insCmtQuery, [userId, comment]);
+
     const { comment_id } = cmt[1][0];
 
     const insCmtCollectionQuery = `INSERT INTO comment_collection (comment_id, collection_id) VALUES (?, ?);`

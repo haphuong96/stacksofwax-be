@@ -155,6 +155,7 @@ async function postCommentCollection(req, res, next) {
 
         res.status(201).send({message: "success"})
     } catch (error) {
+        console.log(error)
         next(error)
     }
 }
