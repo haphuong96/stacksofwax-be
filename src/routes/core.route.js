@@ -27,6 +27,7 @@ router.get('/collections/:collectionId/like/check', userAuthorization, collectio
 router.post('/collections/:collectionId/comment', userAuthorization, collectionController.postCommentCollection)
 
 router.get('/artists', artistController.getAllArtist);
+router.get('/artists/:artistId', artistController.getArtistById);
 
 router.get('/genres', albumController.getAllGenres)
 

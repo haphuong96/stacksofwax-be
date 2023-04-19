@@ -1,12 +1,31 @@
+const { search } = require('../routes/core.route');
 const db = require('../utils/db-execution.util');
 
 
-async function findAllArtist(limit, offset) {
+async function findAllArtist(limit, offset, searchKeyword) {
+    const selectQuery = `SELECT id as artist_id, artist_name, artist_description, img_path FROM artist`;
+    const countSelectQuery = ` SELECT COUNT(id) AS total FROM artist`;
 
-    const artistQuery = `SELECT id as artist_id, artist_name, artist_description, img_path FROM artist LIMIT ? OFFSET ?;`;
-    const countQuery = ` SELECT COUNT(id) AS total FROM artist;`
+    const pagination = ` LIMIT ? OFFSET ?`;
+    const paginationParams = [limit, offset];
+
     
-    const data = await db.execute(artistQuery + countQuery, [limit, offset]);
+    let orderByQuery = '';
+    let whereQuery = '';
+    const orderByParams = [];
+    const whereParams = [];
+
+    if (searchKeyword) {
+        orderByQuery = ` ORDER BY (CASE WHEN artist_name = ? THEN 1 WHEN artist_name LIKE ? THEN 2 ELSE 3 END)`;
+        orderByParams.push(searchKeyword, `${searchKeyword}%`);
+        whereQuery = ` WHERE artist_name LIKE ?`;
+        whereParams.push(`%${searchKeyword}%`);
+    }
+
+    const artistQuery = selectQuery + whereQuery + orderByQuery + pagination;
+    const countQuery = countSelectQuery + whereQuery;
+    
+    const data = await db.execute(`${artistQuery}; ${countQuery}`, [...whereParams, ...orderByParams, ...paginationParams, ...whereParams]);
 
     const { total } = data[1][0];
 
@@ -15,6 +34,13 @@ async function findAllArtist(limit, offset) {
         artists : data[0]
     };
 
+}
+
+async function findArtistById(artistId) {
+    const artistQuery = `SELECT id as artist_id, artist_name, artist_description, img_path FROM artist WHERE id = ?`;
+    const data = await db.execute(artistQuery, [artistId]);
+
+    return data[0];
 }
 
 /**
@@ -84,5 +110,5 @@ async function findAllArtist(limit, offset) {
 
 module.exports = {
     findAllArtist,
-    // findCollectionById,
+    findArtistById
 };
