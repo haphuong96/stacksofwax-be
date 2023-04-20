@@ -18,9 +18,15 @@ async function getArtistById(req, res, next) {
     try {
         const artistId = req.params.artistId;
 
-        const data = await artistService.findArtistById(artistId);
+        const { ...details } = await artistService.findArtistDetailById(artistId);
 
-        res.status(200).send(data);
+        const albums = await artistService.findAlbumsByArtistId(artistId);
+
+        res.status(200).send({
+            ...details,
+            albums: albums
+        });
+        
     } catch (err) {
         next(err);
     }

@@ -53,6 +53,20 @@ async function getMyCollections(req, res, next) {
     }
 }
 
+async function getMyFavoriteCollections(req, res, next) {
+    try {
+        const userId = req.tokenDecoded.userId;
+        const limit = parseInt(req.query.limit);
+        const offset = parseInt(req.query.offset);
+
+        const data = await collectionService.findFavoriteCollectionsByUserId(limit, offset, userId);
+
+        res.status(200).send(data);
+    } catch (error) {
+        next(error)
+    }
+}
+
 
 async function postCollection(req, res, next) {
     try {
@@ -171,5 +185,6 @@ module.exports = {
     likeCollection,
     unlikeCollection,
     checkUserLikedCollection,
-    postCommentCollection
+    postCommentCollection,
+    getMyFavoriteCollections
 };

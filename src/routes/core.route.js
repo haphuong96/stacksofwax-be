@@ -16,6 +16,7 @@ router.get('/albums-filter', albumController.getAlbumFilter);
 router.get('/collections', collectionController.getAllCollection);
 router.get('/collections/:collectionId', collectionController.getCollectionById);
 router.get('/my-collections', userAuthorization, collectionController.getMyCollections);
+router.get('me/favorite-collections', userAuthorization, collectionController.getMyFavoriteCollections);
 
 router.post('/collections', userAuthorization, collectionController.postCollection);
 router.put('/collections/:collectionId', userAuthorization, validateBodyGuard(updateCollectionSchema), collectionController.updateCollection);

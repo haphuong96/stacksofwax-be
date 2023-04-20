@@ -5,7 +5,7 @@ const createError = require("http-errors");
 async function findAllCollection(limit, offset, sort) {
   const pagination = ` LIMIT ? OFFSET ? `;
 
-  const orderByQuery =
+  const orderByQuery = 
     sort.length > 0
       ? sort
           .map((column) => {
@@ -100,7 +100,6 @@ async function findCollectionById(collectionId) {
 }
 
 async function findCollectionDetailsById(collectionId) {
-
   const collectionQuery = `SELECT 
                     ac.id as collection_id,
                     ac.collection_name,
@@ -139,7 +138,7 @@ async function findCollectionAlbumDetailsById(collectionId) {
 }
 
 async function findCollectionCommentsById(collectionId) {
-    const query = `SELECT 
+  const query = `SELECT 
                         coco.comment_id,
                         com.comment,
                         com.created_datetime,
@@ -151,10 +150,10 @@ async function findCollectionCommentsById(collectionId) {
                     JOIN user u ON u.id = com.user_id
                     WHERE
                         coco.collection_id = ?
-                    `
-    const data = await db.execute(query, [collectionId]);
+                    `;
+  const data = await db.execute(query, [collectionId]);
 
-    return data;
+  return data;
 }
 
 async function findCollectionByUserId(limit, offset, userId) {
@@ -310,21 +309,21 @@ async function addLikeToCollection(collectionId, userId) {
 }
 
 async function deleteLikeToCollection(collectionId, userId) {
-    const query = `DELETE FROM collection_like WHERE collection_id = ? AND user_id = ?`;
-    const data = await db.execute(query, [collectionId, userId]);
-    return data;
+  const query = `DELETE FROM collection_like WHERE collection_id = ? AND user_id = ?`;
+  const data = await db.execute(query, [collectionId, userId]);
+  return data;
 }
 
 async function findUserLikedCollection(collectionId, userId) {
-    const query = `SELECT * FROM collection_like WHERE collection_id = ? AND user_id = ?;`;
-    const data = await db.execute(query, [collectionId, userId]);
-    
-    const isLiked = ( data.length > 0 ) ? true : false;
-    return isLiked;
+  const query = `SELECT * FROM collection_like WHERE collection_id = ? AND user_id = ?;`;
+  const data = await db.execute(query, [collectionId, userId]);
+
+  const isLiked = data.length > 0 ? true : false;
+  return isLiked;
 }
 
 async function createCommentCollection(collectionId, userId, comment) {
-    const insCmtQuery = `INSERT INTO comment (user_id, comment) VALUES (?, ?);
+  const insCmtQuery = `INSERT INTO comment (user_id, comment) VALUES (?, ?);
                             SELECT 
                                 id as comment_id, 
                                 user_id, 
@@ -332,18 +331,35 @@ async function createCommentCollection(collectionId, userId, comment) {
                             FROM 
                                 comment 
                             WHERE 
-                                id = LAST_INSERT_ID();`
-    
-    const cmt = await db.execute(insCmtQuery, [userId, comment]);
+                                id = LAST_INSERT_ID();`;
 
-    const { comment_id } = cmt[1][0];
+  const cmt = await db.execute(insCmtQuery, [userId, comment]);
 
-    const insCmtCollectionQuery = `INSERT INTO comment_collection (comment_id, collection_id) VALUES (?, ?);`
+  const { comment_id } = cmt[1][0];
 
-    await db.execute(insCmtCollectionQuery, [comment_id, collectionId]);
+  const insCmtCollectionQuery = `INSERT INTO comment_collection (comment_id, collection_id) VALUES (?, ?);`;
+
+  await db.execute(insCmtCollectionQuery, [comment_id, collectionId]);
 }
 
+async function findFavoriteCollectionsByUserId(userId) {
+  const query = `SELECT
+                  cl.collection_id,
+                  ac.collection_name,
+                  ac.collection_description,
+                  img_path,
+                  created_by,
+                  last_upated_datetime
+                FROM
+                  collection_like cl
+                JOIN album_collection ac ON cl.collection_id = ac.id
+                WHERE
+                  cl.user_id = ?
+                  `
+  const data = await db.execute(query, [userId]);
 
+  return data;
+}
 
 module.exports = {
   findAllCollection,
@@ -359,5 +375,6 @@ module.exports = {
   deleteLikeToCollection,
   findUserLikedCollection,
   createCommentCollection,
-  findCollectionCommentsById
+  findCollectionCommentsById,
+  findFavoriteCollectionsByUserId
 };
