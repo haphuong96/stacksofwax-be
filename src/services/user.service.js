@@ -78,8 +78,8 @@ async function authenticate(userData) {
 }
 
 
-async function getUserById(userId) {
-    const query = ` SELECT id as user_id, username, email_address, password FROM user WHERE id = ?`;
+async function findUserById(userId) {
+    const query = ` SELECT id as user_id, username, email_address, created_datetime FROM user WHERE id = ?`;
     const findUser = await db.execute(query, [userId]);
     return findUser[0];
 }
@@ -87,5 +87,5 @@ async function getUserById(userId) {
 module.exports = {
     createUser,
     authenticate,
-    getUserById
+    findUserById
 }

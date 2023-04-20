@@ -2,37 +2,87 @@ const createHttpError = require("http-errors");
 const db = require("../utils/db-execution.util");
 const createError = require("http-errors");
 
-async function findAllCollection(limit, offset, sort) {
-  const pagination = ` LIMIT ? OFFSET ? `;
+async function findAllCollection(limit, offset, sort, searchKeyword) {
+  let selectQuery = ` SELECT 
+                        ac.id AS collection_id,
+                        ac.collection_name,
+                        ac.collection_desc,
+                        ac.img_path,
+                        ac.last_updated_datetime,
+                        ac.created_datetime,
+                        u.id AS created_by,
+                        u.username`;
+  let countSelectQuery = ` SELECT COUNT(ac.id) AS total `;
 
-  const orderByQuery = 
-    sort.length > 0
-      ? sort
-          .map((column) => {
-            if (!column.startsWith("-")) return `${column} ASC`;
-            return `${column.replace("-", "")} DESC`;
-          })
-          .join(", ")
-      : "";
+  let fromQuery = ` FROM album_collection ac `;
+  let joinsQuery = ` JOIN user u ON ac.created_by = u.id `;
+  const whereList = [];
+  const orderByList = [];
+  const groupByList = [];
+  const paginationQuery = ` LIMIT ? OFFSET ? `;
 
-  const collectionQuery = `SELECT 
-                                ac.id AS collection_id,
-                                ac.collection_name,
-                                ac.collection_desc,
-                                ac.img_path,
-                                ac.last_updated_datetime,
-                                ac.created_datetime,
-                                u.id AS created_by,
-                                u.username
-                            FROM 
-                                album_collection ac
-                            JOIN user u ON ac.created_by = u.id`;
+  // params
+  const selectParams = [];
+  const whereParams = [];
+  const paginationParams = [limit, offset];
+  // const selectQueryList = [
+  //   `ac.id AS collection_id`,
+  //   `ac.collection_name`,
+  //   `ac.collection_desc`,
+  //   `ac.img_path`,
+  //   `ac.last_updated_datetime`,
+  //   `ac.created_datetime`,
+  //   `u.id AS created_by`,
+  //   `u.username`,
+  // ];
 
-  const query = collectionQuery + orderByQuery + pagination + ";";
+  if (sort) {
+    let sortParse;
+    let order;
+    if (sort.startsWith("-")) {
+      sortParse = sort.substring(1);
+      order = `DESC`;
+    } else {
+      sortParse = sort;
+      order = `ASC`;
+    }
 
-  const countQuery = ` SELECT COUNT(id) AS total FROM album_collection;`;
+    switch (sortParse) {
+      case "likes":
+        selectQuery += `, 
+                          COUNT(cl.user_id) as likes_count `;
+        joinsQuery += ` LEFT JOIN collection_like cl ON ac.id = cl.collection_id `
+        orderByList.push(`likes_count ${order}`);
+        groupByList.push(`ac.id`);
+        break;
+      case "created_datetime":
+        orderByList.push(`ac.created_datetime ${order} `);
+        break;
+    }
+  }
 
-  const data = await db.execute(query + countQuery, [limit, offset]);
+  if (searchKeyword) {
+    whereList.push(`ac.collection_name LIKE ?`);
+    whereParams.push(`%${searchKeyword}%`);
+    selectQuery += `, CASE
+                        WHEN ac.collection_name = ? THEN 1
+                          WHEN ac.collection_name LIKE ? THEN 2
+                          ELSE 3
+                        END AS collection_search_order`
+    selectParams.push(searchKeyword, `${searchKeyword}%`);
+    orderByList.push(` collection_search_order`);
+  }
+
+  const orderByQuery = (orderByList.length) ? ` ORDER BY ${orderByList.join(", ")}` : '';
+  const groupByQuery = (groupByList.length) ? ` GROUP BY ${groupByList.join(", ")}` : '';
+  const whereQuery = (whereList.length) ? ` WHERE ${whereList.join(", ")}` : '';
+
+  const collectionQuery = selectQuery + fromQuery + joinsQuery + whereQuery + groupByQuery + orderByQuery + paginationQuery;
+  const countQuery = countSelectQuery + fromQuery + joinsQuery + groupByQuery;
+  console.log(collectionQuery);
+  console.log('count '+countQuery);
+
+  const data = await db.execute(`${collectionQuery};${countQuery}`, [...selectParams, ...whereParams, ...paginationParams]);
 
   const { total } = data[1][0];
 
@@ -355,7 +405,7 @@ async function findFavoriteCollectionsByUserId(userId) {
                 JOIN album_collection ac ON cl.collection_id = ac.id
                 WHERE
                   cl.user_id = ?
-                  `
+                  `;
   const data = await db.execute(query, [userId]);
 
   return data;
@@ -376,5 +426,5 @@ module.exports = {
   findUserLikedCollection,
   createCommentCollection,
   findCollectionCommentsById,
-  findFavoriteCollectionsByUserId
+  findFavoriteCollectionsByUserId,
 };

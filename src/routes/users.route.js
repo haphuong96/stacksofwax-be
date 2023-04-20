@@ -13,5 +13,6 @@ router.post(
 );
 router.post("/login", userController.login);
 router.get("/get-me", userAuthorization, userController.getMe);
+router.get('/users/:userId', userController.getUserById);
 
 module.exports = router;

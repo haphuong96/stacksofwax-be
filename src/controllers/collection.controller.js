@@ -4,9 +4,10 @@ async function getAllCollection(req, res, next) {
     try {
         const limit = parseInt(req.query.limit);
         const offset = parseInt(req.query.offset);
-        const sort = req.query.sort || [];
+        const sort = req.query.sort;
+        const searchKeyword = req.query.search;
 
-        const collections = await collectionService.findAllCollection(limit, offset, sort);
+        const collections = await collectionService.findAllCollection(limit, offset, sort, searchKeyword);
         res.status(200).send(collections);
     } catch (err) {
         next(err);
