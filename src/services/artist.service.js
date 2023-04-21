@@ -1,5 +1,5 @@
 const db = require('../utils/db-execution.util');
-
+const { Artist, ArtistAlbum } = require('../repositories/artist.repository');
 
 async function findAllArtist(limit, offset, searchKeyword) {
     const selectQuery = `SELECT id as artist_id, artist_name, artist_description, img_path FROM artist`;
@@ -36,33 +36,38 @@ async function findAllArtist(limit, offset, searchKeyword) {
 }
 
 async function findArtistDetailById(artistId) {
-    const artistQuery = `SELECT 
-                            id as artist_id, 
-                            artist_name, 
-                            artist_description, 
-                            img_path 
-                        FROM 
-                            artist 
-                        WHERE 
-                            id = ?`;
-    const data = await db.execute(artistQuery, [artistId]);
 
-    return data[0];
+    const data = await Artist.findOne(artistId);
+
+    return data;
+    // const artistQuery = `SELECT 
+    //                         id as artist_id, 
+    //                         artist_name, 
+    //                         artist_description, 
+    //                         img_path 
+    //                     FROM 
+    //                         artist 
+    //                     WHERE 
+    //                         id = ?`;
+    // const data = await db.execute(artistQuery, [artistId]);
+
+    // return data[0];
 }
 
 async function findAlbumsByArtistId(artistId) {
-    const query = `SELECT
-                        aat.album_id,
-                        a.album_title,
-                        a.img_path
-                    FROM
-                        album_artist aat
-                    JOIN album a ON a.id = aat.album_id
-                    WHERE 
-                        aat.artist_id = ? 
-                        `
-    const data = await db.execute(query, [artistId]);
+    // const query = `SELECT
+    //                     aat.album_id,
+    //                     a.album_title,
+    //                     a.img_path
+    //                 FROM
+    //                     album_artist aat
+    //                 JOIN album a ON a.id = aat.album_id
+    //                 WHERE 
+    //                     aat.artist_id = ? 
+    //                     `
+    // const data = await db.execute(query, [artistId]);
 
+    const data = await ArtistAlbum.findAlbumsByArtistId(artistId);
     return data;
 }
 
